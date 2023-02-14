@@ -1,9 +1,9 @@
 package com.lib.torrent.peers;
 
 public interface Subject {
-  void registerListener();
+  void registerListener(Listener listener);
 
-  void removeListener();
+  void removeListener(Listener listener);
 
   void notifyListeners();
 }

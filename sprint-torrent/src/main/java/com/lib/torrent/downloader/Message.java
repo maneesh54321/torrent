@@ -1,4 +1,4 @@
-package com.lib.torrent.model;
+package com.lib.torrent.downloader;
 
 import java.nio.ByteBuffer;
 

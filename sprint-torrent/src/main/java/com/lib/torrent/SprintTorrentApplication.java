@@ -1,10 +1,15 @@
 package com.lib.torrent;
 
 import com.dampcake.bencode.Bencode;
-import com.lib.torrent.model.*;
+import com.lib.torrent.core.LongRunningProcess;
+import com.lib.torrent.downloader.Message;
+import com.lib.torrent.downloader.TorrentDownloader;
 import com.lib.torrent.parser.MetaInfo;
+import com.lib.torrent.peers.Listener;
 import com.lib.torrent.peers.Peer;
 import com.lib.torrent.peers.PeersCollector;
+import com.lib.torrent.peers.PeersStore;
+import com.lib.torrent.peers.Subject;
 import com.lib.torrent.utils.BinaryDataUtils;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.core.io.ClassPathResource;
@@ -33,9 +38,15 @@ public class SprintTorrentApplication {
 
         AtomicBoolean downloadCompleted = new AtomicBoolean(false);
 
-        PeersCollector peersCollector = new PeersCollector(bencode, metaInfo, downloadCompleted);
+        LongRunningProcess peersCollector = new PeersCollector(bencode, metaInfo, downloadCompleted);
 
-        peersCollector.collectPeers(metaInfo);
+        peersCollector.start();
+
+        Subject peerCollectorSubject = (Subject) peersCollector;
+
+        Listener downloader = new TorrentDownloader(1, (PeersStore) peersCollector);
+
+        peerCollectorSubject.registerListener(downloader);
 
 
 

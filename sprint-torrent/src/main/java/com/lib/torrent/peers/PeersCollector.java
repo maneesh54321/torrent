@@ -1,6 +1,8 @@
 package com.lib.torrent.peers;
 
 import com.dampcake.bencode.Bencode;
+import com.lib.torrent.common.Constants;
+import com.lib.torrent.core.LongRunningProcess;
 import com.lib.torrent.parser.MetaInfo;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -18,10 +20,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class PeersCollector implements Subject, PeersStore {
+public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
 
   private static final Duration DEFAULT_PEERS_COLLECTION_TIME = Duration.of(30, ChronoUnit.SECONDS);
-  private final static String PEER_ID = "-SP1000-uartcg486259";
   private final static int PORT = 6881;
   private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
@@ -42,7 +43,17 @@ public class PeersCollector implements Subject, PeersStore {
     this.trackerResponseHandler = TrackerResponseHandler.getInstance(bencode);
   }
 
-  public void collectPeers(MetaInfo metaInfo) {
+  @Override
+  public void start() {
+    startCollection();
+  }
+
+  @Override
+  public void stop() {
+    scheduledExecutorService.shutdownNow();
+  }
+
+  private void startCollection() {
     try {
       // request tracker for list of peers.
       TrackerResponse trackerResponse = requestTrackerForPeers(metaInfo);
@@ -60,10 +71,6 @@ public class PeersCollector implements Subject, PeersStore {
     }
   }
 
-  public void stopCollection() {
-    scheduledExecutorService.shutdownNow();
-  }
-
   private TrackerResponse requestTrackerForPeers(MetaInfo metaInfo)
       throws IOException {
 
@@ -76,7 +83,7 @@ public class PeersCollector implements Subject, PeersStore {
     System.out.println("Building request...");
 
     TrackerRequest trackerRequest = TrackerRequestBuilder.aTrackerRequest()
-        .withInfoHash(metaInfo.getInfo().getInfoHash()).withPeerId(PEER_ID).withPort(PORT)
+        .withInfoHash(metaInfo.getInfo().getInfoHash()).withPeerId(Constants.PEER_ID).withPort(PORT)
         .withUploaded(uploaded).withDownloaded(downloaded).withLeft(0).build();
 
     String trackerRequestUrl = trackerRequest.getUrlEncodedUrl(metaInfo.getAnnounce());
@@ -104,13 +111,13 @@ public class PeersCollector implements Subject, PeersStore {
   }
 
   @Override
-  public void registerListener() {
-
+  public void registerListener(Listener listener) {
+    this.listeners.add(listener);
   }
 
   @Override
-  public void removeListener() {
-
+  public void removeListener(Listener listener) {
+    this.listeners.remove(listener);
   }
 
   @Override
@@ -124,8 +131,11 @@ public class PeersCollector implements Subject, PeersStore {
 
   @Override
   public void addPeers(Collection<Peer> peers) {
-    this.peers.addAll(peers);
-    notifyListeners();
+    Boolean newPeersReceived = this.peers.addAll(peers);
+
+    if(newPeersReceived){
+      notifyListeners();
+    }
   }
 
   static class PeersCollectorTask implements Runnable {
@@ -138,7 +148,7 @@ public class PeersCollector implements Subject, PeersStore {
 
     @Override
     public void run() {
-      peersCollector.collectPeers(peersCollector.metaInfo);
+      peersCollector.startCollection();
     }
   }
 }
