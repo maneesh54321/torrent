@@ -80,32 +80,42 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
     int uploaded = 0;
     int downloaded = 0;
 
-    System.out.println("Building request...");
+    TrackerResponse trackerResponse = null;
 
-    TrackerRequest trackerRequest = TrackerRequestBuilder.aTrackerRequest()
-        .withInfoHash(metaInfo.getInfo().getInfoHash()).withPeerId(Constants.PEER_ID).withPort(PORT)
-        .withUploaded(uploaded).withDownloaded(downloaded).withLeft(0).build();
+    for (String announceUrl : metaInfo.getAnnounceList()) {
+      if (announceUrl.startsWith("http")) {
+        TrackerRequest trackerRequest = TrackerRequestBuilder.aTrackerRequest()
+            .withInfoHash(metaInfo.getInfo().getInfoHash()).withPeerId(Constants.PEER_ID)
+            .withPort(PORT)
+            .withUploaded(uploaded).withDownloaded(downloaded)
+            .withLeft(metaInfo.getInfo().getTotalSizeInBytes()).build();
 
-    String trackerRequestUrl = trackerRequest.getUrlEncodedUrl(metaInfo.getAnnounce());
+        String trackerRequestUrl = trackerRequest.getUrlEncodedUrl(announceUrl);
 
-    System.out.println("Tracker Request URL: " + trackerRequestUrl);
+        System.out.println("Tracker Request URL: " + trackerRequestUrl);
 
-    URL tracker = new URL(trackerRequestUrl);
+        URL tracker = new URL(trackerRequestUrl);
 
-    System.out.println("Sending message to tracker...");
+        System.out.println("Sending message to tracker...");
 
-    var con = (HttpURLConnection) tracker.openConnection();
-    con.setRequestMethod("GET");
-    con.setRequestProperty("Connection", "close");
-    con.setRequestProperty("Accept-Encoding", "gzip");
+        var con = (HttpURLConnection) tracker.openConnection();
+        con.setRequestMethod("GET");
+        con.setRequestProperty("Connection", "close");
+        con.setRequestProperty("Accept-Encoding", "gzip");
 
-    var dataIs = con.getInputStream();
+        var dataIs = con.getInputStream();
 
-    byte[] bytes = dataIs.readAllBytes();
+        byte[] bytes = dataIs.readAllBytes();
 
-    TrackerResponse trackerResponse = trackerResponseHandler.extractTrackerResponse(bytes);
+        trackerResponse = trackerResponseHandler.extractTrackerResponse(bytes);
 
-    System.out.println(trackerResponse);
+        if (!trackerResponse.getPeers().isEmpty()) {
+          break;
+        }
+
+        System.out.println(trackerResponse);
+      }
+    }
 
     return trackerResponse;
   }
@@ -113,6 +123,7 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
   @Override
   public void registerListener(Listener listener) {
     this.listeners.add(listener);
+    System.out.println("Number of listeners: "+ this.listeners.size());
   }
 
   @Override
@@ -122,6 +133,7 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
 
   @Override
   public void notifyListeners() {
+    System.out.println("Notifying all listeners: " + listeners.size());
     listeners.forEach(Listener::update);
   }
 
@@ -132,8 +144,8 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
   @Override
   public void addPeers(Collection<Peer> peers) {
     Boolean newPeersReceived = this.peers.addAll(peers);
-
-    if(newPeersReceived){
+    if (newPeersReceived) {
+      System.out.println("Notifying Listeners...");
       notifyListeners();
     }
   }

@@ -81,14 +81,14 @@ public class Message {
         return notInterested;
     }
 
-    public static ByteBuffer buildDownloadRequest() {
+    public static ByteBuffer buildDownloadRequest(int index, int currentOffset, int currentBlockSize) {
         ByteBuffer downloadRequest = ByteBuffer.allocate(17);
 
         downloadRequest.putInt(13);
         downloadRequest.put((byte)6);
-        downloadRequest.putInt(0);
-        downloadRequest.putInt(0);
-        downloadRequest.putInt(200);
+        downloadRequest.putInt(index);
+        downloadRequest.putInt(currentOffset);
+        downloadRequest.putInt(currentBlockSize);
 
         return downloadRequest;
     }

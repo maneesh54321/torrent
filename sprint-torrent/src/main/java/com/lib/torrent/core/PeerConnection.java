@@ -1,5 +1,6 @@
 package com.lib.torrent.core;
 
+import com.lib.torrent.downloader.PeerConnectionStateEnum;
 import com.lib.torrent.peers.Peer;
 
 import java.io.IOException;

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class Info {
@@ -21,6 +22,8 @@ public class Info {
   private Map<String, Object> infoMap;
   private List<DownloadFile> downloadFiles;
 
+  private long totalSizeInBytes;
+
   public Info(Map<String, Object> infoMap) {
     this.infoMap = infoMap;
     System.out.println("Info Map: " + infoMap);
@@ -31,6 +34,7 @@ public class Info {
 
     // Create content representation
     if (null != pieces) {
+      long totalSizeInBytes = 0;
       this.downloadFiles = new ArrayList<>();
       if (infoMap.containsKey("files")) {
         // multi file mode
@@ -44,6 +48,7 @@ public class Info {
               .map(pathByteBuffer -> new String(pathByteBuffer.array()))
               .collect(Collectors.toList());
           long length = (long) file.get("length");
+          totalSizeInBytes += length;
           long numberOfPieces = length / pieceLength;
           downloadFiles.add(
               new DownloadFile(
@@ -60,18 +65,14 @@ public class Info {
         // single file mode
         String name = new String(((ByteBuffer) infoMap.get("name")).array(),
             StandardCharsets.UTF_8);
-        String md5Sum = new String(((ByteBuffer) infoMap.get("name")).array(),
-            StandardCharsets.UTF_8);
+        String md5Sum = (String) infoMap.get("md5Sum");
+        long length = (long) infoMap.get("length");
+        totalSizeInBytes += length;
         DownloadFile downloadFile = new DownloadFile(name, null, 0, pieces.length, md5Sum);
         this.downloadFiles.add(downloadFile);
-
-//        System.out.println(
-//            "Number of pieces calculated using length and piece length: " + (length / pieceLength
-//                + (length % pieceLength > 0 ? 1 : 0)));
-//        System.out.println(
-//            "Number of pieces calculated by dividing 'pieces' hashed byte array length by 20: "
-//                + this.pieces.length / 20);
       }
+
+      this.totalSizeInBytes = totalSizeInBytes;
     }
 
 
@@ -96,6 +97,10 @@ public class Info {
 
   public byte[] getPieces() {
     return pieces;
+  }
+
+  public long getTotalSizeInBytes() {
+    return totalSizeInBytes;
   }
 
   @Override
