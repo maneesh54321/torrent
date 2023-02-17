@@ -4,7 +4,7 @@ import com.lib.torrent.peers.Peer;
 import java.util.Optional;
 
 public interface PieceManager {
-  void complete(byte[] piece);
+  void complete(PieceBlock block);
 
   Optional<DownloadPiece> takeDownloadPiece(Peer peer);
 

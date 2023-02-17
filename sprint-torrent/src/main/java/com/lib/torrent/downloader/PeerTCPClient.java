@@ -5,11 +5,13 @@ import com.lib.torrent.downloader.exception.ConnectionChokedException;
 import com.lib.torrent.parser.MetaInfo;
 import com.lib.torrent.peers.Peer;
 import com.lib.torrent.piece.DownloadPiece;
+import com.lib.torrent.piece.PieceBlock;
 import com.lib.torrent.piece.PieceManager;
 import com.lib.torrent.utils.BinaryDataUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -41,10 +43,12 @@ public class PeerTCPClient implements TCPClient {
   }
 
   @Override
-  public boolean startConnection() {
+  public void startConnection() {
     System.out.println("Starting connection with peer: " + peer);
     try {
-      Socket clientSocket = new Socket(peer.getIpAddress(), peer.getPort());
+      Socket clientSocket = new Socket();
+
+      clientSocket.connect(new InetSocketAddress(peer.getIpAddress(), peer.getPort()), 3000);
 
       OutputStream out = clientSocket.getOutputStream();
 
@@ -66,75 +70,86 @@ public class PeerTCPClient implements TCPClient {
       stopConnection();
       e.printStackTrace();
     }
-    return false;
   }
 
   private void handleMessages(InputStream in, OutputStream out) throws Exception {
     try {
       while (true) {
-        byte[] wholeMessage = extractWholeMessage(in);
-        switch (wholeMessage[0]) {
-          case 0:
-            System.out.println("choke message received!!!");
-            peer_choking = true;
-            throw new ConnectionChokedException("Connection has been choked!!!");
-          case 1:
-            System.out.println("unchoke message received!!!");
-            peer_choking = false;
-            // send interested message
-            if (!am_interested) {
-              out.write(Message.buildInterested().array());
-              am_interested = true;
-            }
-            // start downloading..
-            Optional<DownloadPiece> maybeDownloadPiece = pieceManager.takeDownloadPiece(this.peer);
-            if (maybeDownloadPiece.isPresent()) {
-              sendPieceDownloadRequest(maybeDownloadPiece.get(), metaInfo, out);
-            }
-            break;
-          case 2:
-            System.out.println("interested message received!!!");
-            peer_interested = true;
-            break;
-          case 3:
-            System.out.println("Not interested message received!!!");
-            peer_interested = false;
-            break;
-          case 4:
-            System.out.println("Have message received!!!");
-            // Add this peer as having the piece index received in message
-            pieceManager.addDownloadPiece(
-                ByteBuffer.wrap(wholeMessage, 0, wholeMessage.length - 1).getInt(),
-                this.peer
-            );
-            break;
-          case 5:
-            System.out.println("Bitfield message received!!!");
-            // Add this peer as having all the pieces index received in message
-            String bitString = BinaryDataUtils.toBinaryString(wholeMessage, 1,
-                wholeMessage.length - 1);
-            for (int i = 0; i < bitString.length(); i++) {
-              if (bitString.charAt(i) == '1') {
-                pieceManager.addDownloadPiece(i, this.peer);
+        if (in.available() > 0) {
+          byte[] wholeMessage = extractWholeMessage(in);
+          ByteBuffer message = ByteBuffer.wrap(wholeMessage);
+          MessageType messageType = MessageType.valueOf(message.get());
+          switch (messageType) {
+            case PIECE:
+              System.out.println("piece message received!!!");
+              // TODO write this to memory and mark this completed!!!
+              int dataSize = message.remaining() - 8;
+              byte[] data = new byte[dataSize];
+              PieceBlock block = new PieceBlock(message.getInt(), message.getInt(),
+                  message.get(data).array());
+              pieceManager.complete(block);
+
+              Optional<DownloadPiece> maybeDownloadPiece1 = pieceManager.takeDownloadPiece(
+                  this.peer);
+              if (maybeDownloadPiece1.isPresent()) {
+                sendPieceDownloadRequest(maybeDownloadPiece1.get(), metaInfo, out);
+              } else {
+                // TODO If there are no pieces to download, terminate this connection.
               }
-            }
-            break;
-          case 6:
-            System.out.println("piece request message received!!!");
-            break;
-          case 7:
-            System.out.println("piece message received!!!");
-            // TODO write this to memory and mark this completed!!!
-            Optional<DownloadPiece> maybeDownloadPiece1 = pieceManager.takeDownloadPiece(this.peer);
-            if (maybeDownloadPiece1.isPresent()) {
-              sendPieceDownloadRequest(maybeDownloadPiece1.get(), metaInfo, out);
-            } else {
-              // TODO If there are no pieces to download, terminate this connection.
-            }
-            break;
-          case 8:
-            System.out.println("cancel message received!!!");
-            break;
+              break;
+            case HAVE:
+              System.out.println("Have message received!!!");
+              // Add this peer as having the piece index received in message
+              pieceManager.addDownloadPiece(
+                  ByteBuffer.wrap(wholeMessage, 0, wholeMessage.length - 1).getInt(),
+                  this.peer
+              );
+              break;
+            case PIECE_REQUEST:
+              System.out.println("piece request message received!!!");
+              break;
+            case CHOKE:
+              System.out.println("choke message received!!!");
+              peer_choking = true;
+              throw new ConnectionChokedException("Connection has been choked!!!");
+            case UNCHOKE:
+              System.out.println("unchoke message received!!!");
+              peer_choking = false;
+              // send interested message
+              if (!am_interested) {
+                out.write(Message.buildInterested().array());
+                am_interested = true;
+              }
+              // start downloading..
+              Optional<DownloadPiece> maybeDownloadPiece = pieceManager.takeDownloadPiece(
+                  this.peer);
+              if (maybeDownloadPiece.isPresent()) {
+                sendPieceDownloadRequest(maybeDownloadPiece.get(), metaInfo, out);
+              }
+              break;
+            case INTERESTED:
+              System.out.println("interested message received!!!");
+              peer_interested = true;
+              break;
+            case NOT_INTERESTED:
+              System.out.println("Not interested message received!!!");
+              peer_interested = false;
+              break;
+            case BITFIELD:
+              System.out.println("Bitfield message received!!!");
+              // Add this peer as having all the pieces index received in message
+              String bitString = BinaryDataUtils.toBinaryString(wholeMessage, 1,
+                  wholeMessage.length - 1);
+              for (int i = 0; i < bitString.length(); i++) {
+                if (bitString.charAt(i) == '1') {
+                  pieceManager.addDownloadPiece(i, this.peer);
+                }
+              }
+              break;
+            case CANCEL:
+              System.out.println("cancel message received!!!");
+              break;
+          }
         }
       }
     } catch (IOException e) {
@@ -197,8 +212,8 @@ public class PeerTCPClient implements TCPClient {
   }
 
   @Override
-  public boolean stopConnection() {
-    return false;
+  public void stopConnection() {
+    System.out.println("Peer " + this.peer + ": Connection dropped!!!");
   }
 
   public PeerConnectionStateEnum getState() {
