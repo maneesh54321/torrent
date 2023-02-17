@@ -9,10 +9,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Info {
+
+  private static final Logger log = LoggerFactory.getLogger(Info.class);
 
   private final static Bencode bencode = new Bencode(true);
   private final Long pieceLength;
@@ -26,7 +29,7 @@ public class Info {
 
   public Info(Map<String, Object> infoMap) {
     this.infoMap = infoMap;
-    System.out.println("Info Map: " + infoMap);
+    log.info("Info Map: " + infoMap);
     this.infoHash = calculateInfoHash(this.infoMap);
     this.pieceLength = (Long) infoMap.get("piece length");
     this.isPrivate = (int) infoMap.getOrDefault("private", 0);

@@ -1,6 +1,5 @@
 package com.lib.torrent.core;
 
-import com.lib.torrent.downloader.PeerConnectionStateEnum;
 import com.lib.torrent.peers.Peer;
 
 import java.io.IOException;
@@ -12,8 +11,6 @@ import java.nio.channels.SocketChannel;
 
 public class PeerConnection implements TorrentPiecesAvailabilityUpdater, PieceDownloader {
 
-    private PeerConnectionStateEnum connectionState;
-
     private Peer peer;
 
     private Selector selector;
@@ -22,7 +19,6 @@ public class PeerConnection implements TorrentPiecesAvailabilityUpdater, PieceDo
 
     public PeerConnection(Peer peer, Selector selector, SocketChannel socketChannel) {
         this.peer = peer;
-        this.connectionState = PeerConnectionStateEnum.DISCONNECTED;
         this.selector = selector;
 
 //        try {

@@ -19,8 +19,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
+
+  private static final Logger log = LoggerFactory.getLogger(PeersCollector.class);
 
   private static final Duration DEFAULT_PEERS_COLLECTION_TIME = Duration.of(30, ChronoUnit.SECONDS);
   private final static int PORT = 6881;
@@ -92,11 +96,11 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
 
         String trackerRequestUrl = trackerRequest.getUrlEncodedUrl(announceUrl);
 
-        System.out.println("Tracker Request URL: " + trackerRequestUrl);
+        log.info("Tracker Request URL: " + trackerRequestUrl);
 
         URL tracker = new URL(trackerRequestUrl);
 
-        System.out.println("Sending message to tracker...");
+        log.info("Sending message to tracker...");
 
         var con = (HttpURLConnection) tracker.openConnection();
         con.setRequestMethod("GET");
@@ -109,11 +113,11 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
 
         trackerResponse = trackerResponseHandler.extractTrackerResponse(bytes);
 
-        if (!trackerResponse.getPeers().isEmpty()) {
+        if (trackerResponse.getPeers().isEmpty()) {
           break;
         }
 
-        System.out.println(trackerResponse);
+        log.info(trackerResponse.toString());
       }
     }
 
@@ -123,7 +127,7 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
   @Override
   public void registerListener(Listener listener) {
     this.listeners.add(listener);
-    System.out.println("Number of listeners: "+ this.listeners.size());
+    log.info("Number of listeners: "+ this.listeners.size());
   }
 
   @Override
@@ -133,7 +137,7 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
 
   @Override
   public void notifyListeners() {
-    System.out.println("Notifying all listeners: " + listeners.size());
+    log.info("Notifying all listeners: " + listeners.size());
     listeners.forEach(Listener::update);
   }
 
@@ -143,9 +147,8 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
 
   @Override
   public void addPeers(Collection<Peer> peers) {
-    Boolean newPeersReceived = this.peers.addAll(peers);
+    var newPeersReceived = this.peers.addAll(peers);
     if (newPeersReceived) {
-      System.out.println("Notifying Listeners...");
       notifyListeners();
     }
   }

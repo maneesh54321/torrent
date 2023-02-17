@@ -1,4 +1,4 @@
-package com.lib.torrent.utils;
+package com.lib.torrent.common.utils;
 
 public class BinaryDataUtils {
     public static String hex(byte[] bytes) {

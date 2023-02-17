@@ -1,31 +1,34 @@
 package com.lib.torrent.downloader;
 
 import com.lib.torrent.common.Constants;
+import com.lib.torrent.common.utils.BinaryDataUtils;
 import com.lib.torrent.downloader.exception.ConnectionChokedException;
 import com.lib.torrent.parser.MetaInfo;
 import com.lib.torrent.peers.Peer;
 import com.lib.torrent.piece.DownloadPiece;
 import com.lib.torrent.piece.PieceBlock;
 import com.lib.torrent.piece.PieceManager;
-import com.lib.torrent.utils.BinaryDataUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PeerTCPClient implements TCPClient {
+
+  private static final Logger log = LoggerFactory.getLogger(PeerTCPClient.class);
 
   private final Peer peer;
 
   private final MetaInfo metaInfo;
 
   private final PieceManager pieceManager;
-
-  private PeerConnectionStateEnum state;
 
   private boolean am_choking = true;
 
@@ -39,36 +42,29 @@ public class PeerTCPClient implements TCPClient {
     this.peer = peer;
     this.metaInfo = metaInfo;
     this.pieceManager = pieceManager;
-    this.state = PeerConnectionStateEnum.CHOKED;
   }
 
   @Override
   public void startConnection() {
-    System.out.println("Starting connection with peer: " + peer);
-    try {
-      Socket clientSocket = new Socket();
+    log.info("Starting connection with peer: " + peer);
 
-      clientSocket.connect(new InetSocketAddress(peer.getIpAddress(), peer.getPort()), 3000);
+    try (final Socket clientSocket = new Socket()) {
+      SocketAddress socketAddress = new InetSocketAddress(peer.getIpAddress(), peer.getPort());
+      clientSocket.connect(socketAddress, 3000);
+      try (
+          InputStream in = clientSocket.getInputStream();
+          OutputStream out = clientSocket.getOutputStream();
+      ) {
+        out.write(
+            Message.buildHandshake(metaInfo.getInfo().getInfoHash(), Constants.PEER_ID).array());
 
-      OutputStream out = clientSocket.getOutputStream();
-
-      out.write(
-          Message.buildHandshake(metaInfo.getInfo().getInfoHash(), Constants.PEER_ID).array());
-
-      InputStream in = clientSocket.getInputStream();
-
-      checkIfHandshake(in);
-
-      // check for unchoked message from Peer as this client is choked by default
-      // and remain choked until proved otherwise
-
-      handleMessages(in, out);
-
-      // send interested message and wait for unchoke message from Peer
-
+        checkIfHandshake(in);
+        // handle further messages
+        handleMessages(in, out);
+      }
     } catch (Exception e) {
       stopConnection();
-      e.printStackTrace();
+      log.error("Exception occurred while communicating with the Peer...", e);
     }
   }
 
@@ -81,7 +77,7 @@ public class PeerTCPClient implements TCPClient {
           MessageType messageType = MessageType.valueOf(message.get());
           switch (messageType) {
             case PIECE:
-              System.out.println("piece message received!!!");
+              log.info("piece message received!!!");
               // TODO write this to memory and mark this completed!!!
               int dataSize = message.remaining() - 8;
               byte[] data = new byte[dataSize];
@@ -98,7 +94,7 @@ public class PeerTCPClient implements TCPClient {
               }
               break;
             case HAVE:
-              System.out.println("Have message received!!!");
+              log.info("Have message received!!!");
               // Add this peer as having the piece index received in message
               pieceManager.addDownloadPiece(
                   ByteBuffer.wrap(wholeMessage, 0, wholeMessage.length - 1).getInt(),
@@ -106,14 +102,14 @@ public class PeerTCPClient implements TCPClient {
               );
               break;
             case PIECE_REQUEST:
-              System.out.println("piece request message received!!!");
+              log.info("piece request message received!!!");
               break;
             case CHOKE:
-              System.out.println("choke message received!!!");
+              log.info("choke message received!!!");
               peer_choking = true;
               throw new ConnectionChokedException("Connection has been choked!!!");
             case UNCHOKE:
-              System.out.println("unchoke message received!!!");
+              log.info("unchoke message received!!!");
               peer_choking = false;
               // send interested message
               if (!am_interested) {
@@ -127,16 +123,8 @@ public class PeerTCPClient implements TCPClient {
                 sendPieceDownloadRequest(maybeDownloadPiece.get(), metaInfo, out);
               }
               break;
-            case INTERESTED:
-              System.out.println("interested message received!!!");
-              peer_interested = true;
-              break;
-            case NOT_INTERESTED:
-              System.out.println("Not interested message received!!!");
-              peer_interested = false;
-              break;
             case BITFIELD:
-              System.out.println("Bitfield message received!!!");
+              log.info("Bitfield message received!!!");
               // Add this peer as having all the pieces index received in message
               String bitString = BinaryDataUtils.toBinaryString(wholeMessage, 1,
                   wholeMessage.length - 1);
@@ -146,8 +134,16 @@ public class PeerTCPClient implements TCPClient {
                 }
               }
               break;
+            case INTERESTED:
+              log.info("interested message received!!!");
+              peer_interested = true;
+              break;
+            case NOT_INTERESTED:
+              log.info("Not interested message received!!!");
+              peer_interested = false;
+              break;
             case CANCEL:
-              System.out.println("cancel message received!!!");
+              log.info("cancel message received!!!");
               break;
           }
         }
@@ -155,7 +151,7 @@ public class PeerTCPClient implements TCPClient {
     } catch (IOException e) {
       throw new RuntimeException(e);
     } catch (ConnectionChokedException e) {
-      e.printStackTrace();
+      log.error(e.getMessage());
       throw e;
     }
   }
@@ -185,38 +181,39 @@ public class PeerTCPClient implements TCPClient {
   }
 
   private void checkIfHandshake(InputStream in) throws Exception {
-    int probablyHandshakeLength = in.read();
-    if (probablyHandshakeLength == 19) {
-      byte[] bitTorrentMessage = new byte[19];
-      in.read(bitTorrentMessage);
-      String maybeProtocolString = new String(bitTorrentMessage, StandardCharsets.UTF_8);
-      if (maybeProtocolString.equals("BitTorrent protocol")) {
-        byte[] handshakeBody = new byte[48];
-        in.read(handshakeBody);
-        // TODO: verify if the handshake message has same info hash as ours.
-        System.out.println("Completed handshake!!!");
-      } else {
-        throw new Exception("No Handshake received from Peer!!!");
+    int maybeHandshakeLength = in.read();
+    if (maybeHandshakeLength == -1) {
+      throw new Exception("Connection terminated from Peer!!");
+    } else {
+      if (maybeHandshakeLength == 19) {
+        byte[] bitTorrentMessage = in.readNBytes(19);
+        String maybeProtocolString = new String(bitTorrentMessage, StandardCharsets.UTF_8);
+        if (maybeProtocolString.equals("BitTorrent protocol")) {
+          byte[] handshakeBody = in.readNBytes(48);
+          // TODO: verify if the handshake message has same info hash as ours.
+          log.info("Completed handshake!!!");
+        } else {
+          throw new Exception("No Handshake received from Peer!!!");
+        }
       }
     }
   }
 
   private byte[] extractWholeMessage(InputStream in)
       throws IOException {
-    byte[] lengthBytes = new byte[4];
-    in.read(lengthBytes);
-    int length = ByteBuffer.wrap(lengthBytes).getInt();
-    byte[] wholeMessage = new byte[length];
-    in.read(wholeMessage);
-    return wholeMessage;
+    int length = ByteBuffer.wrap(in.readNBytes(4)).getInt();
+    return in.readNBytes(length);
   }
 
   @Override
   public void stopConnection() {
-    System.out.println("Peer " + this.peer + ": Connection dropped!!!");
+    log.info("Peer " + this.peer + ": Connection dropped!!!");
   }
 
-  public PeerConnectionStateEnum getState() {
-    return state;
+  @Override
+  public void printConnectionState() {
+    log.info("{} state: am_choking: {} am_interested: {} peer_choking: {} peer_interested: {}",
+        peer, am_choking, am_interested, peer_choking, peer_interested);
   }
+
 }

@@ -12,8 +12,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MetaInfo {
+
+    private static final Logger log = LoggerFactory.getLogger(MetaInfo.class);
 
     private final String announce;
 
@@ -47,7 +51,7 @@ public class MetaInfo {
             inputStream.readAllBytes(),
             Type.DICTIONARY
         );
-        System.out.println("Decoded meta info: \n" + decodedMetaInfo);
+        log.info("Decoded meta info: \n" + decodedMetaInfo);
         String announce = new String(((ByteBuffer) decodedMetaInfo.get("announce")).array(), StandardCharsets.UTF_8);
         String createdBy = new String(((ByteBuffer) decodedMetaInfo.getOrDefault("created by",
             ByteBuffer.allocate(0))).array(), StandardCharsets.UTF_8);
@@ -66,7 +70,7 @@ public class MetaInfo {
         }
 
         MetaInfo metaInfo = new MetaInfo(announce, announceList, creationDate, comment, createdBy, encoding, info);
-        System.out.println("MetaInfo: \n" + metaInfo);
+        log.info("MetaInfo: \n" + metaInfo);
         return metaInfo;
     }
 

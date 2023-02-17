@@ -6,4 +6,6 @@ public interface TCPClient {
   void startConnection();
 
   void stopConnection();
+
+  void printConnectionState();
 }

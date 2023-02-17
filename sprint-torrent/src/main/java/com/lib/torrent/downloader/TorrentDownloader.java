@@ -9,8 +9,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TorrentDownloader implements Listener {
+
+  private static final Logger log = LoggerFactory.getLogger(TorrentDownloader.class);
 
   private final int id;
 
@@ -34,11 +38,11 @@ public class TorrentDownloader implements Listener {
 
   @Override
   public void update() {
-    System.out.println("New peers are now available!!! Query from PeersStore...");
+    log.info("New peers are now available!!! Query from PeersStore...");
 
     Set<Peer> peers = peersStore.getPeers();
 
-    System.out.println("Number of Peers available: " + peers.size());
+    log.info("Number of Peers available: " + peers.size());
 
     peers.stream().forEach(peer -> {
       TCPClient tcpClient = new PeerTCPClient(peer, metaInfo, pieceManager);

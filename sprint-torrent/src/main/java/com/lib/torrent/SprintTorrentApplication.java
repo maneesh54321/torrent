@@ -13,9 +13,13 @@ import com.lib.torrent.piece.TorrentContentPiecesManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 
 public class SprintTorrentApplication {
+
+  private static final Logger log = LoggerFactory.getLogger(SprintTorrentApplication.class);
 
   private final static Bencode bencode = new Bencode(true);
 
