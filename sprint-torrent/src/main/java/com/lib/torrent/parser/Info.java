@@ -18,11 +18,17 @@ public class Info {
   private static final Logger log = LoggerFactory.getLogger(Info.class);
 
   private final static Bencode bencode = new Bencode(true);
+
   private final Long pieceLength;
+
   private final byte[] pieces;
+
   private final int isPrivate;
+
   private final byte[] infoHash;
+
   private Map<String, Object> infoMap;
+
   private List<DownloadFile> downloadFiles;
 
   private long totalSizeInBytes;
@@ -104,6 +110,10 @@ public class Info {
 
   public long getTotalSizeInBytes() {
     return totalSizeInBytes;
+  }
+
+  public int getTotalPieces() {
+    return this.pieces.length / 20;
   }
 
   @Override

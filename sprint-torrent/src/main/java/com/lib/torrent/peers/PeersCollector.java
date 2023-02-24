@@ -26,9 +26,11 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
 
   private static final Logger log = LoggerFactory.getLogger(PeersCollector.class);
 
-  private static final Duration DEFAULT_PEERS_COLLECTION_TIME = Duration.of(30, ChronoUnit.SECONDS);
+  private static final Duration DEFAULT_PEERS_COLLECTION_TIME =
+      Duration.of(30, ChronoUnit.SECONDS);
   private final static int PORT = 6881;
-  private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+  private final ScheduledExecutorService scheduledExecutorService =
+      Executors.newSingleThreadScheduledExecutor();
 
   private final Set<Peer> peers;
 
@@ -127,7 +129,7 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
   @Override
   public void registerListener(Listener listener) {
     this.listeners.add(listener);
-    log.info("Number of listeners: "+ this.listeners.size());
+    log.info("Number of listeners: " + this.listeners.size());
   }
 
   @Override

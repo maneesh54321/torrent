@@ -1,15 +1,10 @@
 package com.lib.torrent;
 
 import com.dampcake.bencode.Bencode;
-import com.lib.torrent.core.LongRunningProcess;
 import com.lib.torrent.downloader.TorrentDownloader;
 import com.lib.torrent.parser.MetaInfo;
-import com.lib.torrent.peers.Listener;
 import com.lib.torrent.peers.PeersCollector;
-import com.lib.torrent.peers.PeersStore;
-import com.lib.torrent.peers.Subject;
-import com.lib.torrent.piece.PieceManager;
-import com.lib.torrent.piece.TorrentContentPiecesManager;
+import com.lib.torrent.piece.AvailablePieceStore;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,15 +28,17 @@ public class SprintTorrentApplication {
 
     AtomicBoolean downloadCompleted = new AtomicBoolean(false);
 
-    LongRunningProcess peersCollector = new PeersCollector(bencode, metaInfo, downloadCompleted);
+    PeersCollector peersCollector = new PeersCollector(bencode, metaInfo, downloadCompleted);
 
-    PieceManager pieceManager = new TorrentContentPiecesManager();
+    AvailablePieceStore availablePieceStore = new AvailablePieceStore();
+    TorrentDownloader downloader = new TorrentDownloader(1, peersCollector, metaInfo,
+        availablePieceStore);
 
-    Listener downloader = new TorrentDownloader(1, (PeersStore) peersCollector, metaInfo, pieceManager);
-
-    ((Subject) peersCollector).registerListener(downloader);
+    peersCollector.registerListener(downloader);
 
     peersCollector.start();
+
+    downloader.start();
 
 //        connectToPeer(trackerResponse.getPeers().get(10), metaInfo.getInfo().getInfoHash(), PEER_ID);
   }

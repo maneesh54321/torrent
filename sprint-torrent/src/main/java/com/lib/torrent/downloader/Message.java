@@ -3,46 +3,45 @@ package com.lib.torrent.downloader;
 import java.nio.ByteBuffer;
 
 public class Message {
+
     public static ByteBuffer buildHandshake(byte[] infoHash, String peerId){
         ByteBuffer handshakeMessage = ByteBuffer.allocate(68);
         // pstrlen
-        handshakeMessage.put(0, (byte)19);
+        handshakeMessage.put((byte)19);
 
         //pstr
         byte[] pstr = "BitTorrent protocol".getBytes();
-        handshakeMessage.put(1, pstr);
+        handshakeMessage.put(pstr);
 
         //reserved
-        handshakeMessage.put(20, new byte[8]);
+        handshakeMessage.putInt(0);
+        handshakeMessage.putInt(0);
 
         // info_hash
-        handshakeMessage.put(28, infoHash);
+        handshakeMessage.put(infoHash);
 
         //peer_id
-        handshakeMessage.put(48, peerId.getBytes());
+        handshakeMessage.put(peerId.getBytes());
 
         return handshakeMessage;
     }
 
     public static ByteBuffer buildKeepAlive(){
         ByteBuffer keepAlive = ByteBuffer.allocate(4);
-        // length prefix
-//        keepAlive.put(new byte[]{0, 0, 0, 0});
-
+        keepAlive.putInt(0);
         return keepAlive;
     }
 
-    public static ByteBuffer buildUnchoke(){
-        ByteBuffer unchoke = ByteBuffer.allocate(5);
+    public static ByteBuffer buildUnChoke(){
+        ByteBuffer unChoke = ByteBuffer.allocate(5);
 
         // length prefix
-        unchoke.putInt(1);
-//        unchoke.put(new byte[]{0, 0, 0, 1});
+        unChoke.putInt(1);
 
-        //unchoke message id = 1
-        unchoke.put((byte)1);
+        //unChoke message id = 1
+        unChoke.put((byte)1);
 
-        return unchoke;
+        return unChoke;
     }
 
     public static ByteBuffer buildInterested(){
@@ -75,7 +74,7 @@ public class Message {
         notInterested.putInt(1);
 //        notInterested.put(new byte[]{0, 0, 0, 1});
 
-        //uninterested message id = 3
+        // uninterested message id = 3
         notInterested.put((byte)3);
 
         return notInterested;

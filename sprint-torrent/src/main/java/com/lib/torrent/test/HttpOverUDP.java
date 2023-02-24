@@ -1,4 +1,4 @@
-package com.lib.torrent;
+package com.lib.torrent.test;
 
 import java.io.IOException;
 import java.net.*;
