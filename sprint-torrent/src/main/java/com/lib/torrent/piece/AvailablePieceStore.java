@@ -9,9 +9,9 @@ import java.util.PriorityQueue;
 
 public class AvailablePieceStore {
 
-  private PriorityQueue<AvailablePiece> availablePieces;
+  private final PriorityQueue<AvailablePiece> availablePieces;
 
-  private Map<Integer, AvailablePiece> availablePieceMap;
+  private final Map<Integer, AvailablePiece> availablePieceMap;
 
   public AvailablePieceStore() {
     availablePieces = new PriorityQueue<>(Comparator.comparingInt(value -> value.getPeers().size()));
@@ -21,8 +21,6 @@ public class AvailablePieceStore {
 
   /**
    * This constructor is created for unit test cases.
-   * @param availablePieces
-   * @param availablePieceMap
    */
   public AvailablePieceStore(PriorityQueue<AvailablePiece> availablePieces,
       Map<Integer, AvailablePiece> availablePieceMap) {

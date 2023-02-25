@@ -8,6 +8,11 @@ import java.util.List;
 
 class TrackerResponse {
     private Long interval;
+
+    private int leechers;
+
+    private int seeders;
+
     private List<Peer> peers;
 
     public Optional<Long> getInterval() {
@@ -16,6 +21,14 @@ class TrackerResponse {
 
     public void setInterval(Long interval) {
         this.interval = interval;
+    }
+
+    public void setLeechers(int leechers) {
+        this.leechers = leechers;
+    }
+
+    public void setSeeders(int seeders) {
+        this.seeders = seeders;
     }
 
     public Optional<List<Peer>> getPeers() {

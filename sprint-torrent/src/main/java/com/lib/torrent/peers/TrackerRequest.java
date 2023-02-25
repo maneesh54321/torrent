@@ -15,23 +15,23 @@ class TrackerRequest {
   public final static String NO_PEER_ID = "no_peer_id";
   public final static String COMPACT = "compact";
 
-  private byte[] infoHash;
+  private final byte[] infoHash;
 
-  private String peerId;
+  private final String peerId;
 
-  private int port;
+  private final int port;
 
-  private int uploaded;
+  private final long uploaded;
 
-  private int downloaded;
+  private final long downloaded;
 
-  private long left;
+  private final long left;
 
   private int compact;
 
   private int noPeerId;
 
-  TrackerRequest(byte[] infoHash, String peerId, int port, int uploaded, int downloaded,
+  TrackerRequest(byte[] infoHash, String peerId, int port, long uploaded, long downloaded,
       long left) {
     this.infoHash = infoHash;
     this.peerId = peerId;

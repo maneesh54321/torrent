@@ -1,11 +1,11 @@
 package com.lib.torrent.parser;
 
 import com.dampcake.bencode.Bencode;
+import com.lib.torrent.content.Content;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -23,13 +23,13 @@ public class Info {
 
   private final byte[] pieces;
 
-  private final int isPrivate;
+  private final Long isPrivate;
 
   private final byte[] infoHash;
 
   private Map<String, Object> infoMap;
 
-  private List<DownloadFile> downloadFiles;
+  private Content content;
 
   private long totalSizeInBytes;
 
@@ -38,19 +38,22 @@ public class Info {
     log.info("Info Map: " + infoMap);
     this.infoHash = calculateInfoHash(this.infoMap);
     this.pieceLength = (Long) infoMap.get("piece length");
-    this.isPrivate = (int) infoMap.getOrDefault("private", 0);
+    this.isPrivate = (Long) infoMap.getOrDefault("private", 0);
     this.pieces = ((ByteBuffer) infoMap.get("pieces")).array();
 
     // Create content representation
     if (null != pieces) {
       long totalSizeInBytes = 0;
-      this.downloadFiles = new ArrayList<>();
       if (infoMap.containsKey("files")) {
         // multi file mode
         List<Map<String, Object>> files = (List<Map<String, Object>>) infoMap.get("files");
+        String rootDirectoryName = new String(((ByteBuffer) infoMap.get("name")).array(),
+            StandardCharsets.UTF_8);
+        DownloadFile[] downloadFiles = new DownloadFile[files.size()];
+        content = new Content(rootDirectoryName, downloadFiles);
 
         int pieceStartIndex = 0;
-
+        int i = 0;
         // check if access of file in files is ordered because that will impact piece start index
         for (Map<String, Object> file : files) {
           List<String> path = ((List<ByteBuffer>) file.get("path")).stream()
@@ -59,32 +62,29 @@ public class Info {
           long length = (long) file.get("length");
           totalSizeInBytes += length;
           long numberOfPieces = length / pieceLength;
-          downloadFiles.add(
-              new DownloadFile(
-                  path.get(path.size() - 1),
-                  path,
-                  pieceStartIndex,
-                  numberOfPieces,
-                  (String) file.getOrDefault("md5Sum", "")
-              )
+          downloadFiles[i++] = new DownloadFile(
+              path.get(path.size() - 1),
+              path,
+              pieceStartIndex,
+              numberOfPieces,
+              (String) file.getOrDefault("md5Sum", "")
           );
           pieceStartIndex += length / pieceLength - 1;
         }
       } else {
         // single file mode
+        DownloadFile[] downloadFiles = new DownloadFile[1];
         String name = new String(((ByteBuffer) infoMap.get("name")).array(),
             StandardCharsets.UTF_8);
         String md5Sum = (String) infoMap.get("md5Sum");
         long length = (long) infoMap.get("length");
         totalSizeInBytes += length;
-        DownloadFile downloadFile = new DownloadFile(name, null, 0, pieces.length, md5Sum);
-        this.downloadFiles.add(downloadFile);
+        downloadFiles[0] =  new DownloadFile(name, null, 0, pieces.length, md5Sum);
+        content = new Content(null, downloadFiles);
       }
 
       this.totalSizeInBytes = totalSizeInBytes;
     }
-
-
   }
 
   private static byte[] calculateInfoHash(Map<String, Object> info) {
@@ -116,18 +116,17 @@ public class Info {
     return this.pieces.length / 20;
   }
 
-  public List<DownloadFile> getDownloadFiles() {
-    return downloadFiles;
+  public Content getContent() {
+    return content;
   }
 
   @Override
   public String toString() {
     return "Info{" +
         "pieceLength=" + pieceLength +
-        ", pieces.length=" + Arrays.toString(pieces).length() +
         ", isPrivate=" + isPrivate +
-        ", infoHash=" + Arrays.toString(infoHash) +
-        ", downloadFiles=" + downloadFiles +
+        ", content=" + content +
+        ", totalSizeInBytes=" + totalSizeInBytes +
         '}';
   }
 }

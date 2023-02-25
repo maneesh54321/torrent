@@ -22,9 +22,8 @@ public class SprintTorrentApplication {
 
   public static void main(String[] args) throws IOException {
 
-    InputStream inputStream = new ClassPathResource("debian-9.3.0-ppc64el-netinst.torrent").getInputStream();
-//    InputStream inputStream = new ClassPathResource("test-pdf.torrent").getInputStream();
-//    InputStream inputStream = new ClassPathResource("ChatGPT_AI_Chat_AI_Friend_v1.6_Pro_Mod_Apk_APKISM.torrent").getInputStream();
+//    InputStream inputStream = new ClassPathResource("debian-9.3.0-ppc64el-netinst.torrent").getInputStream();
+    InputStream inputStream = new ClassPathResource("Adam Lambert - High Drama (2023) Mp3 320kbps [PMEDIA] ⭐️.torrent").getInputStream();
 //    InputStream inputStream = new ClassPathResource("Farzi.S01.Complete.720p.AMZN.WEBRip.AAC.H.265-HODL.torrent").getInputStream();
 
     // read the torrent file
@@ -39,13 +38,11 @@ public class SprintTorrentApplication {
     ContentManager contentManager = new ContentManagerRandomAccessFileImpl(metaInfo);
 
     TorrentDownloader downloader = new TorrentDownloader(1, peersCollector, metaInfo,
-        availablePieceStore, contentManager);
+        availablePieceStore, contentManager, downloadCompleted);
 
     peersCollector.registerListener(downloader);
 
     peersCollector.start();
-
-    downloader.start();
 
 //    connectToPeer(trackerResponse.getPeers().get(10), metaInfo.getInfo().getInfoHash(), PEER_ID);
   }

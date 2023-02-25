@@ -17,12 +17,12 @@ interface PortTrackerRequestBuilder {
 
 interface UploadedTrackerRequestBuilder {
 
-  DownloadedTrackerRequestBuilder withUploaded(int uploaded);
+  DownloadedTrackerRequestBuilder withUploaded(long uploaded);
 }
 
 interface DownloadedTrackerRequestBuilder {
 
-  LeftTrackerRequestBuilder withDownloaded(int downloaded);
+  LeftTrackerRequestBuilder withDownloaded(long downloaded);
 }
 
 interface LeftTrackerRequestBuilder {
@@ -45,9 +45,9 @@ public class TrackerRequestBuilder implements InfoHashTrackerRequestBuilder,
 
   private int port;
 
-  private int uploaded;
+  private long uploaded;
 
-  private int downloaded;
+  private long downloaded;
 
   private long left;
 
@@ -105,13 +105,13 @@ public class TrackerRequestBuilder implements InfoHashTrackerRequestBuilder,
   }
 
   @Override
-  public DownloadedTrackerRequestBuilder withUploaded(int uploaded) {
+  public DownloadedTrackerRequestBuilder withUploaded(long uploaded) {
     this.uploaded = uploaded;
     return this;
   }
 
   @Override
-  public LeftTrackerRequestBuilder withDownloaded(int downloaded) {
+  public LeftTrackerRequestBuilder withDownloaded(long downloaded) {
     this.downloaded = downloaded;
     return this;
   }

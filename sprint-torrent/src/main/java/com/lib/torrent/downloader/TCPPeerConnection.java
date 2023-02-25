@@ -48,7 +48,6 @@ public class TCPPeerConnection implements PeerConnection {
     this.peer = peer;
     this.metaInfo = metaInfo;
     this.torrentDownloader = torrentDownloader;
-    start();
   }
 
   @Override
