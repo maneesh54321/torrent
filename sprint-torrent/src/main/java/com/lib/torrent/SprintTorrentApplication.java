@@ -1,6 +1,8 @@
 package com.lib.torrent;
 
 import com.dampcake.bencode.Bencode;
+import com.lib.torrent.content.ContentManager;
+import com.lib.torrent.content.ContentManagerRandomAccessFileImpl;
 import com.lib.torrent.downloader.TorrentDownloader;
 import com.lib.torrent.parser.MetaInfo;
 import com.lib.torrent.peers.PeersCollector;
@@ -20,9 +22,11 @@ public class SprintTorrentApplication {
 
   public static void main(String[] args) throws IOException {
 
-    InputStream inputStream = new ClassPathResource(
-        "debian-9.3.0-ppc64el-netinst.torrent").getInputStream();
-//        InputStream inputStream = new ClassPathResource("Farzi.S01.Complete.720p.AMZN.WEBRip.AAC.H.265-HODL.torrent").getInputStream();
+    InputStream inputStream = new ClassPathResource("debian-9.3.0-ppc64el-netinst.torrent").getInputStream();
+//    InputStream inputStream = new ClassPathResource("test-pdf.torrent").getInputStream();
+//    InputStream inputStream = new ClassPathResource("ChatGPT_AI_Chat_AI_Friend_v1.6_Pro_Mod_Apk_APKISM.torrent").getInputStream();
+//    InputStream inputStream = new ClassPathResource("Farzi.S01.Complete.720p.AMZN.WEBRip.AAC.H.265-HODL.torrent").getInputStream();
+
     // read the torrent file
     MetaInfo metaInfo = MetaInfo.parseTorrentFile(inputStream);
 
@@ -31,8 +35,11 @@ public class SprintTorrentApplication {
     PeersCollector peersCollector = new PeersCollector(bencode, metaInfo, downloadCompleted);
 
     AvailablePieceStore availablePieceStore = new AvailablePieceStore();
+
+    ContentManager contentManager = new ContentManagerRandomAccessFileImpl(metaInfo);
+
     TorrentDownloader downloader = new TorrentDownloader(1, peersCollector, metaInfo,
-        availablePieceStore);
+        availablePieceStore, contentManager);
 
     peersCollector.registerListener(downloader);
 
@@ -40,7 +47,7 @@ public class SprintTorrentApplication {
 
     downloader.start();
 
-//        connectToPeer(trackerResponse.getPeers().get(10), metaInfo.getInfo().getInfoHash(), PEER_ID);
+//    connectToPeer(trackerResponse.getPeers().get(10), metaInfo.getInfo().getInfoHash(), PEER_ID);
   }
 
 //  public static void connectToPeer(Peer peer, byte[] infoHash, String peerId) {

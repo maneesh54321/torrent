@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -62,7 +63,7 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
   private void startCollection() {
     try {
       // request tracker for list of peers.
-      TrackerResponse trackerResponse = requestTrackerForPeers(metaInfo);
+      TrackerResponse trackerResponse = requestTrackerForPeers(metaInfo).orElseThrow(() -> new Exception("Could not contact tracker!!!"));
       List<Peer> peers = trackerResponse.getPeers().orElse(Collections.emptyList());
       this.addPeers(peers);
       if (downloadCompleted.get()) {
@@ -72,12 +73,13 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
             trackerResponse.getInterval().orElse(DEFAULT_PEERS_COLLECTION_TIME.getSeconds()),
             TimeUnit.SECONDS);
       }
-    } catch (IOException e) {
+    } catch (Exception e) {
+      stop();
       throw new RuntimeException(e);
     }
   }
 
-  private TrackerResponse requestTrackerForPeers(MetaInfo metaInfo)
+  private Optional<TrackerResponse> requestTrackerForPeers(MetaInfo metaInfo)
       throws IOException {
 
     // form tracker request and send it to Tracker
@@ -123,7 +125,7 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
       }
     }
 
-    return trackerResponse;
+    return Optional.ofNullable(trackerResponse);
   }
 
   @Override

@@ -56,12 +56,12 @@ public class PieceRequest {
     return blocksDownloaded == totalBlocks;
   }
 
-  public int getBlocksDownloaded() {
-    return blocksDownloaded;
+  public DownloadedBlock[] getDownloadedBlocks() {
+    return downloadedBlocks;
   }
 
-  public void setBlocksDownloaded(int blocksDownloaded) {
-    this.blocksDownloaded = blocksDownloaded;
+  public int getBlocksDownloaded() {
+    return blocksDownloaded;
   }
 
   @Override

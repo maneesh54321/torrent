@@ -116,6 +116,10 @@ public class Info {
     return this.pieces.length / 20;
   }
 
+  public List<DownloadFile> getDownloadFiles() {
+    return downloadFiles;
+  }
+
   @Override
   public String toString() {
     return "Info{" +

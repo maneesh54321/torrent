@@ -3,11 +3,11 @@ package com.lib.torrent.downloader;
 public interface PeerConnection {
   void start();
 
-  boolean isDownloading();
-
   boolean canDownload();
 
-  void download(int pieceIndex) throws Exception;
+  DownloadedBlock[] download(int pieceIndex) throws Exception;
+
+  DownloadedBlock downloadBlock(BlockRequest blockRequest) throws Exception;
 
   void stop();
 

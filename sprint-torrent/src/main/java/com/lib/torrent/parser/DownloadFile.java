@@ -33,8 +33,12 @@ public class DownloadFile {
                 '}';
     }
 
-    public Optional<List<String>> getPath() {
-        return Optional.ofNullable(path);
+    public List<String> getPath() {
+        return path;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Optional<String> getMd5Sum() {
