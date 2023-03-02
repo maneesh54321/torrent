@@ -24,7 +24,7 @@ public class BinaryDataUtils {
     public static String toBinaryString(byte[] bytes, int offset, int length){
         StringBuilder result = new StringBuilder();
         int i = 0;
-        while (i<length) {
+        while (i < length) {
             result.append(String.format("%8s",
                     Integer.toBinaryString(bytes[i+offset] & 0xff)).replace(' ', '0'));
             i++;

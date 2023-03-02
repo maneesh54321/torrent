@@ -7,8 +7,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import javax.swing.text.html.Option;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class TrackerResponseHandler {
+
+  private static final Logger log = LoggerFactory.getLogger(TrackerResponseHandler.class);
 
   private static TrackerResponseHandler trackerResponseHandler;
   private final Bencode bencode;
@@ -37,8 +41,8 @@ class TrackerResponseHandler {
       ByteBuffer byteBuffer = (ByteBuffer) map.get("peers");
       TrackerResponse trackerResponse = new TrackerResponse();
       trackerResponse.setInterval((Long) map.get("interval"));
-      trackerResponse.setLeechers((Integer) map.get("incomplete"));
-      trackerResponse.setSeeders((Integer) map.get("complete"));
+      trackerResponse.setLeechers((Long) map.get("incomplete"));
+      trackerResponse.setSeeders((Long) map.get("complete"));
 
       while (byteBuffer.hasRemaining()) {
         StringBuilder ip = new StringBuilder();
@@ -57,6 +61,7 @@ class TrackerResponseHandler {
 
       return Optional.of(trackerResponse);
     } catch (Exception e) {
+      log.error("Error occurred while parsing tracker response!!", e);
       return Optional.empty();
     }
   }

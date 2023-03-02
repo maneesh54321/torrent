@@ -1,6 +1,10 @@
 package com.lib.torrent.piece;
 
+import com.lib.torrent.common.Constants;
+import com.lib.torrent.downloader.DownloadedBlock;
+import com.lib.torrent.parser.MetaInfo;
 import com.lib.torrent.peers.Peer;
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -12,21 +16,37 @@ public class AvailablePiece {
 
   private int pieceIndex;
 
-  private Set<Peer> peers;
+  private final Set<Peer> peers;
 
-  private ReadWriteLock readWriteLock;
+  private final Lock readLock;
 
-  private Lock readLock;
+  private final Lock writeLock;
 
-  private Lock writeLock;
+  private final BitSet blocksDownloadStatus;
 
-  public AvailablePiece(int pieceIndex, Peer peer) {
+  private long pieceLength;
+
+  public AvailablePiece(int pieceIndex, Peer peer, MetaInfo metaInfo) {
     this.pieceIndex = pieceIndex;
     this.peers = new HashSet<>();
     this.peers.add(peer);
-    readWriteLock = new ReentrantReadWriteLock();
+    ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     readLock = readWriteLock.readLock();
     writeLock = readWriteLock.writeLock();
+
+    pieceLength = metaInfo.getInfo().getPieceLength();
+    int totalPieces = metaInfo.getInfo().getTotalPieces();
+    // if it the last piece
+    if (pieceIndex == totalPieces - 1) {
+      pieceLength = metaInfo.getInfo().getTotalSizeInBytes() % pieceLength;
+    }
+    int totalBlocks = (int) pieceLength / Constants.BLOCK_SIZE;
+
+    if ((pieceLength % Constants.BLOCK_SIZE) > 0) {
+      totalBlocks++;
+    }
+
+    blocksDownloadStatus = new BitSet(totalBlocks);
   }
 
   public int getPieceIndex() {
@@ -49,6 +69,20 @@ public class AvailablePiece {
     } finally {
       writeLock.unlock();
     }
+  }
+
+  public void updateBlockDownloadStatus(DownloadedBlock downloadedBlock) {
+    if(downloadedBlock.pieceIndex() == this.pieceIndex){
+      this.blocksDownloadStatus.set(downloadedBlock.offset()/Constants.BLOCK_SIZE);
+    }
+  }
+
+  public int getTotalBlocks(){
+    return blocksDownloadStatus.size();
+  }
+
+  public long getPieceLength() {
+    return pieceLength;
   }
 
   @Override

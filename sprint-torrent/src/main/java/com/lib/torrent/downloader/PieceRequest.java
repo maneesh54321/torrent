@@ -1,17 +1,22 @@
 package com.lib.torrent.downloader;
 
 import com.lib.torrent.parser.MetaInfo;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PieceRequest {
 
   private static final int BLOCK_SIZE = 16_384;
+
   private int index;
-  private BlockRequest[] blockRequests;
+  private List<BlockRequest> blockRequests;
+
   private DownloadedBlock[] downloadedBlocks;
 
   private int totalBlocks;
 
   private int blocksDownloaded;
+
 
   public PieceRequest(int index, MetaInfo metaInfo) {
     this.index = index;
@@ -22,23 +27,21 @@ public class PieceRequest {
     if (index == totalPieces - 1) {
       pieceLength = metaInfo.getInfo().getTotalSizeInBytes() % pieceLength;
     }
+    this.blockRequests = new ArrayList<>();
     totalBlocks = (int) pieceLength / BLOCK_SIZE;
 
     long lastBlockSize = pieceLength % BLOCK_SIZE;
 
     if(lastBlockSize > 0){
-      this.blockRequests = new BlockRequest[totalBlocks+1];
       this.downloadedBlocks = new DownloadedBlock[totalBlocks+1];
-      this.blockRequests[totalBlocks] = new BlockRequest(index, totalBlocks * BLOCK_SIZE, BLOCK_SIZE);
+      this.blockRequests.set(totalBlocks, new BlockRequest(index, totalBlocks * BLOCK_SIZE, BLOCK_SIZE));
     } else {
-      this.blockRequests = new BlockRequest[totalBlocks];
       this.downloadedBlocks = new DownloadedBlock[totalBlocks];
     }
 
     int blockNo = 0;
-    while (blockNo < totalBlocks) {
-      this.blockRequests[blockNo] = new BlockRequest(index, blockNo * BLOCK_SIZE, BLOCK_SIZE);
-      blockNo++;
+    for (int i = 0; i < totalBlocks; i++) {
+      this.blockRequests.add(new BlockRequest(index, blockNo * BLOCK_SIZE, BLOCK_SIZE));
     }
   }
 
@@ -48,7 +51,7 @@ public class PieceRequest {
     return blocksDownloaded == this.downloadedBlocks.length;
   }
 
-  public BlockRequest[] getBlockRequests() {
+  public List<BlockRequest> getBlockRequests() {
     return blockRequests;
   }
 

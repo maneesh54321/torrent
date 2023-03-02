@@ -6,4 +6,6 @@ public interface Constants {
   String DOWNLOAD_ROOT_LOCATION = "/Users/maneesh/Downloads/";
 
   int PORT = 6881;
+
+  int BLOCK_SIZE = 16_384;
 }

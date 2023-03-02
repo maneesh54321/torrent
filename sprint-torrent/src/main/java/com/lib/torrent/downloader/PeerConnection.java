@@ -5,8 +5,6 @@ public interface PeerConnection {
 
   boolean canDownload();
 
-  DownloadedBlock[] download(int pieceIndex) throws Exception;
-
   DownloadedBlock downloadBlock(BlockRequest blockRequest) throws Exception;
 
   void stop();

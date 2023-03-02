@@ -9,7 +9,6 @@ import com.lib.torrent.piece.AvailablePiece;
 import com.lib.torrent.piece.AvailablePieceStore;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -28,13 +27,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TorrentDownloader implements Downloader, Listener {
+
   private static final Logger log = LoggerFactory.getLogger(TorrentDownloader.class);
 
   private static Integer downloadedPiecesNum = 0;
 
   private static Boolean stopped = false;
-
-  private final int id;
 
   private final PeersStore peersStore;
 
@@ -48,18 +46,19 @@ public class TorrentDownloader implements Downloader, Listener {
 
   private final AtomicBoolean downloadCompleted;
 
-  private ExecutorService executorService = Executors.newFixedThreadPool(30);
+  private final ExecutorService executorService =
+      Executors.newFixedThreadPool(30);
 
-  private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+  private final ScheduledExecutorService scheduledExecutorService =
+      Executors.newScheduledThreadPool(1);
 
-  private ReconnectPeersTask reconnectPeersTask;
+  private final ReconnectPeersTask reconnectPeersTask;
 
   private boolean isRunning = false;
 
-  public TorrentDownloader(int id, PeersStore peersStore, MetaInfo metaInfo,
+  public TorrentDownloader(PeersStore peersStore, MetaInfo metaInfo,
       AvailablePieceStore availablePieceStore, ContentManager contentManager,
       AtomicBoolean downloadCompleted) {
-    this.id = id;
     this.peersStore = peersStore;
     this.metaInfo = metaInfo;
     this.availablePieceStore = availablePieceStore;
@@ -76,13 +75,13 @@ public class TorrentDownloader implements Downloader, Listener {
 
     log.info("Number of Peers available: " + peers.size());
 
-    peers.stream().limit(30).forEach(peer -> {
-      if (!this.activePeerConnections.containsKey(peer)) {
-        TCPPeerConnection peerConnection = new TCPPeerConnection(peer, metaInfo, this);
-        activePeerConnections.put(peer, peerConnection);
-        executorService.submit(peerConnection::start);
-      }
-    });
+    peers.stream().limit(30)
+        .filter(peer -> !activePeerConnections.containsKey(peer))
+        .forEach( peer -> {
+            TCPPeerConnection peerConnection = new TCPPeerConnection(peer, metaInfo, this);
+            activePeerConnections.put(peer, peerConnection);
+            executorService.submit(peerConnection::start);
+        });
     if (!isRunning) {
       scheduledExecutorService.scheduleAtFixedRate(reconnectPeersTask, 60000, 60000,
           TimeUnit.MILLISECONDS);
@@ -103,19 +102,18 @@ public class TorrentDownloader implements Downloader, Listener {
         Optional<AvailablePiece> highestPriorityPiece = this.availablePieceStore.getHighestPriorityPiece();
         log.info("Piece prioritized: {}", highestPriorityPiece);
         // TODO handle none of the peers able to download.
-
         highestPriorityPiece.ifPresentOrElse(availablePiece -> {
           List<PeerConnection> peersForDownload = availablePiece.getPeers().stream()
               .map(activePeerConnections::get)
               .filter(PeerConnection::canDownload)
               .toList();
           if (peersForDownload.isEmpty()) {
-            log.info("No peer found for downloading!!!");
-            availablePieceStore.restoreAvailablePiece(availablePiece);
+            log.info(
+                "No peer found for downloading the piece!!! Discarding the piece from available pieces store..");
           } else {
             PieceRequest pieceRequest = new PieceRequest(availablePiece.getPieceIndex(), metaInfo);
-            BlockRequest[] blockRequests = pieceRequest.getBlockRequests();
-            Iterator<BlockRequest> requestIt = Arrays.stream(blockRequests).iterator();
+            List<BlockRequest> blockRequests = pieceRequest.getBlockRequests();
+            Iterator<BlockRequest> requestIt = blockRequests.iterator();
             Iterator<PeerConnection> peersIt = peersForDownload.iterator();
             List<Future<DownloadedBlock>> downloadedBlockFutures = new ArrayList<>();
             while (requestIt.hasNext()) {
@@ -149,13 +147,17 @@ public class TorrentDownloader implements Downloader, Listener {
             } catch (ExecutionException e) {
               downloadedBlockFutures.forEach(future -> future.cancel(false));
               availablePieceStore.restoreAvailablePiece(availablePiece);
-            } catch (InterruptedException e) {
-              throw new RuntimeException(e);
-            } catch (IOException e) {
+            } catch (InterruptedException | IOException e) {
               throw new RuntimeException(e);
             }
           }
-        }, this::checkForAvailablePieces);
+        }, () -> {
+          try {
+            Thread.sleep(2000);
+          } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+          }
+        });
       }
     } catch (Exception e) {
       log.error("Error occurred while downloading the torrent", e);
@@ -183,6 +185,7 @@ public class TorrentDownloader implements Downloader, Listener {
   }
 
   private void shutdown() {
+    log.info("Shutting down downloader!!!");
     scheduledExecutorService.shutdownNow();
     for (PeerConnection peerConnection : this.activePeerConnections.values()) {
       peerConnection.stop();

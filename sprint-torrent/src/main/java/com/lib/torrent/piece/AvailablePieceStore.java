@@ -1,5 +1,6 @@
 package com.lib.torrent.piece;
 
+import com.lib.torrent.parser.MetaInfo;
 import com.lib.torrent.peers.Peer;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -13,7 +14,10 @@ public class AvailablePieceStore {
 
   private final Map<Integer, AvailablePiece> availablePieceMap;
 
-  public AvailablePieceStore() {
+  private final MetaInfo metaInfo;
+
+  public AvailablePieceStore(MetaInfo metaInfo) {
+    this.metaInfo = metaInfo;
     availablePieces = new PriorityQueue<>(Comparator.comparingInt(value -> value.getPeers().size()));
     availablePieceMap = new HashMap<>();
   }
@@ -23,9 +27,10 @@ public class AvailablePieceStore {
    * This constructor is created for unit test cases.
    */
   public AvailablePieceStore(PriorityQueue<AvailablePiece> availablePieces,
-      Map<Integer, AvailablePiece> availablePieceMap) {
+      Map<Integer, AvailablePiece> availablePieceMap, MetaInfo metaInfo) {
     this.availablePieces = availablePieces;
     this.availablePieceMap = availablePieceMap;
+    this.metaInfo = metaInfo;
   }
 
   public void addAvailablePiece(int pieceIndex, Peer peer) {
@@ -36,7 +41,7 @@ public class AvailablePieceStore {
         availablePieces.add(availablePiece);
       }
     } else {
-      AvailablePiece availablePiece = new AvailablePiece(pieceIndex, peer);
+      AvailablePiece availablePiece = new AvailablePiece(pieceIndex, peer, metaInfo);
       availablePieceMap.put(pieceIndex, availablePiece);
       availablePieces.add(availablePiece);
     }

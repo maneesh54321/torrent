@@ -266,8 +266,8 @@ public class PeersCollector implements LongRunningProcess, Subject, PeersStore {
         log.debug("UDP announce message success");
         TrackerResponse trackerResponse = new TrackerResponse();
         trackerResponse.setInterval((long) announceResponse.getInt());
-        trackerResponse.setLeechers(announceResponse.getInt());
-        trackerResponse.setSeeders(announceResponse.getInt());
+        trackerResponse.setLeechers((long) announceResponse.getInt());
+        trackerResponse.setSeeders((long) announceResponse.getInt());
 
         int peerListOffset = 20;
         while (peerListOffset < responsePacket.getLength()) {

@@ -44,9 +44,9 @@ public class ContentManagerRandomAccessFileImpl implements ContentManager {
           Files.createDirectory(rootDirectory);
         }
         int j = 0;
-        String path = "";
+        StringBuilder path = new StringBuilder();
         while (j < downloadFile.getPath().size() - 1) {
-          path += "/" + downloadFile.getPath().get(j);
+          path.append("/").append(downloadFile.getPath().get(j));
           Path filePath = Path.of(
               Constants.DOWNLOAD_ROOT_LOCATION + content.rootDirectoryName() + path);
           if(!Files.exists(filePath)){

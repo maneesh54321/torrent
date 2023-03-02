@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.PriorityQueue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.util.Assert;
 
 class AvailablePieceStoreTest {
 
@@ -25,7 +24,7 @@ class AvailablePieceStoreTest {
     availablePieces = new PriorityQueue<>(
         Comparator.comparingInt(value -> value.getPeers().size()));
     availablePieceMap = new HashMap<>();
-    availablePieceStore = new AvailablePieceStore(availablePieces, availablePieceMap);
+    availablePieceStore = new AvailablePieceStore(availablePieces, availablePieceMap, null);
     availablePieceStore.addAvailablePiece(0, new Peer("192.168.0.1", 1882));
     availablePieceStore.addAvailablePiece(0, new Peer("192.168.0.2", 1882));
     availablePieceStore.addAvailablePiece(1, new Peer("192.168.0.1", 1882));
@@ -42,7 +41,7 @@ class AvailablePieceStoreTest {
     Peer peer = new Peer("192.168.0.2", 1882);
     int pieceIndex = 0;
     availablePieceStore.addAvailablePiece(pieceIndex, peer);
-    AvailablePiece availablePiece = new AvailablePiece(pieceIndex, peer);
+    AvailablePiece availablePiece = new AvailablePiece(pieceIndex, peer, null);
     isTrue(availablePieces.contains(availablePiece),
         "Store must have the available piece in its set");
     isTrue(availablePieceMap.containsKey(pieceIndex) && availablePieceMap.get(pieceIndex)
@@ -54,7 +53,7 @@ class AvailablePieceStoreTest {
     Optional<AvailablePiece> availablePiece = availablePieceStore.getHighestPriorityPiece();
 
     isTrue(
-        availablePiece.get().equals(new AvailablePiece(1, new Peer("192.168.0.1", 1882))),
+        availablePiece.get().equals(new AvailablePiece(1, new Peer("192.168.0.1", 1882), null)),
         "The highest priority item is not correct!!");
   }
 

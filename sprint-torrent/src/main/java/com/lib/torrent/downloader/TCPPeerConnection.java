@@ -27,22 +27,15 @@ public class TCPPeerConnection implements PeerConnection {
   private final Peer peer;
 
   private final MetaInfo metaInfo;
-
-  private boolean am_choking = true;
-
-  private boolean am_interested = false;
-
-  private boolean peer_choking = true;
-
-  private boolean peer_interested = false;
-
-  private DataInputStream dis;
-
-  private DataOutputStream dos;
-
-  private PieceRequest pieceRequest;
-
+  private Socket clientSocket;
   private final TorrentDownloader torrentDownloader;
+  private boolean am_choking = true;
+  private boolean am_interested = false;
+  private boolean peer_choking = true;
+  private boolean peer_interested = false;
+  private DataInputStream dis;
+  private DataOutputStream dos;
+  private PieceRequest pieceRequest;
 
   public TCPPeerConnection(Peer peer, MetaInfo metaInfo, TorrentDownloader torrentDownloader) {
     this.peer = peer;
@@ -55,9 +48,9 @@ public class TCPPeerConnection implements PeerConnection {
     log.info("Starting connection with peer: " + peer);
 
     try {
-      final Socket clientSocket = new Socket();
+      this.clientSocket = new Socket();
       SocketAddress socketAddress = new InetSocketAddress(peer.getIpAddress(), peer.getPort());
-      clientSocket.connect(socketAddress, 3000);
+      clientSocket.connect(socketAddress, 5000);
       dis = new DataInputStream(clientSocket.getInputStream());
       dos = new DataOutputStream(clientSocket.getOutputStream());
 
@@ -91,41 +84,6 @@ public class TCPPeerConnection implements PeerConnection {
   }
 
   @Override
-  public synchronized DownloadedBlock[] download(int pieceIndex) throws Exception {
-    try {
-      pieceRequest = new PieceRequest(pieceIndex, metaInfo);
-      int i = 0;
-      BlockRequest[] blockRequests = pieceRequest.getBlockRequests();
-      while (i < blockRequests.length) {
-        int j;
-        for (j = i; j < (i + 10) && j < blockRequests.length; j++) {
-          BlockRequest br = blockRequests[j];
-          log.debug("Sending request for block : {}", br);
-          dos.write(
-              Message.buildDownloadRequest(br.getPieceIndex(), br.getOffset(), br.getLength())
-                  .array());
-        }
-
-        int totalBlocksSent = j - i;
-
-        log.debug("Receiving pieces...");
-        int downloadedBlocksBeforeDownload = pieceRequest.getBlocksDownloaded();
-        // receive pieces
-        handleMessages(
-            () -> pieceRequest.getBlocksDownloaded()
-                < downloadedBlocksBeforeDownload + totalBlocksSent);
-        i = j;
-        log.debug("Downloaded {} blocks, downloadComplete? {}", totalBlocksSent,
-            pieceRequest.isDownloadComplete());
-      }
-      log.info("Downloaded piece: {}", pieceRequest);
-      return pieceRequest.getDownloadedBlocks();
-    } catch (Exception e) {
-      throw new Exception("Download failed!!", e);
-    }
-  }
-
-  @Override
   public synchronized DownloadedBlock downloadBlock(BlockRequest blockRequest) throws Exception {
     log.debug("Sending request for block : {}", blockRequest);
     dos.write(
@@ -140,131 +98,117 @@ public class TCPPeerConnection implements PeerConnection {
   }
 
   private void handleMessages(Supplier<Boolean> keepReading) throws Exception {
-    try {
-      while (keepReading.get()) {
-        if (dis.available() > 0) {
-          // extract a full message
-          byte[] wholeMessage = extractWholeMessage(dis);
-          ByteBuffer message = ByteBuffer.wrap(wholeMessage);
-          MessageType messageType = MessageType.valueOf(message.get());
-          switch (messageType) {
-            case PIECE:
-              log.debug("piece message received!!!");
-              int dataSize = message.remaining() - 8;
-              byte[] data = new byte[dataSize];
-              pieceRequest.addDownloadedBlock(
-                  new DownloadedBlock(message.getInt(), message.getInt(),
-                      message.get(data).array()));
-              break;
-            case HAVE:
-              log.debug("Have message received!!!");
-              // Add this peer as having the piece index received in message
-              int pieceIndex = message.getInt();
-              torrentDownloader.addAvailablePiece(pieceIndex, this.peer);
-              break;
-            case PIECE_REQUEST:
-              log.debug("piece request message received!!!");
-              break;
-            case CHOKE:
-              log.debug("choke message received!!!");
-              peer_choking = true;
-              throw new ConnectionChokedException("Connection has been choked!!!");
-            case UNCHOKE:
-              log.debug("unChoke message received!!!");
-              peer_choking = false;
-              break;
-            case BITFIELD:
-              log.debug("Bitfield message received!!!");
-              // Add this peer as having all the pieces index received in message
-              String bitString = BinaryDataUtils.toBinaryString(wholeMessage, 1,
-                  wholeMessage.length - 1);
-              for (int i = 0; i < bitString.length(); i++) {
-                if (bitString.charAt(i) == '1') {
-                  torrentDownloader.addAvailablePiece(i, this.peer);
-                }
-              }
-              break;
-            case INTERESTED:
-              log.debug("interested message received!!!");
-              peer_interested = true;
-              dos.write(Message.buildUnChoke().array());
-              break;
-            case NOT_INTERESTED:
-              log.debug("Not interested message received!!!");
-              peer_interested = false;
-              break;
-            case CANCEL:
-              log.debug("cancel message received!!!");
-              break;
+    while (keepReading.get()) {
+      if (dis.available() > 0) {
+        // extract a full message
+        byte[] wholeMessage = extractWholeMessage(dis);
+        ByteBuffer message = ByteBuffer.wrap(wholeMessage);
+        MessageType messageType = MessageType.valueOf(message.get());
+        switch (messageType) {
+          case PIECE -> {
+            log.debug("piece message received!!!");
+            int dataSize = message.remaining() - 8;
+            byte[] data = new byte[dataSize];
+            pieceRequest.addDownloadedBlock(
+                new DownloadedBlock(message.getInt(), message.getInt(),
+                    message.get(data).array()));
           }
+          case HAVE -> {
+            log.debug("Have message received!!!");
+            // Add this peer as having the piece index received in message
+            int pieceIndex = message.getInt();
+            torrentDownloader.addAvailablePiece(pieceIndex, this.peer);
+          }
+          case PIECE_REQUEST -> log.debug("piece request message received!!!");
+          case CHOKE -> {
+            log.warn("choke message received!!!");
+            peer_choking = true;
+          }
+          case UNCHOKE -> {
+            log.debug("unChoke message received!!!");
+            peer_choking = false;
+          }
+          case BITFIELD -> {
+            log.debug("Bitfield message received!!!");
+            // Add this peer as having all the pieces index received in message
+            String bitString = BinaryDataUtils.toBinaryString(wholeMessage, 1,
+                wholeMessage.length - 1);
+            for (int i = 0; i < bitString.length(); i++) {
+              if (bitString.charAt(i) == '1') {
+                torrentDownloader.addAvailablePiece(i, this.peer);
+              }
+            }
+          }
+          case INTERESTED -> {
+            log.debug("interested message received!!!");
+            peer_interested = true;
+            dos.write(Message.buildUnChoke().array());
+          }
+          case NOT_INTERESTED -> {
+            log.debug("Not interested message received!!!");
+            peer_interested = false;
+          }
+          case CANCEL -> log.debug("cancel message received!!!");
         }
       }
-    } catch (IOException | ConnectionChokedException e) {
-      throw e;
     }
   }
 
   private Optional<DownloadedBlock> receiveBlock(Supplier<Boolean> keepDownloading)
       throws Exception {
-    try {
-      while (keepDownloading.get()) {
-        if (dis.available() > 0) {
-          // extract a full message
-          byte[] wholeMessage = extractWholeMessage(dis);
-          ByteBuffer message = ByteBuffer.wrap(wholeMessage);
-          MessageType messageType = MessageType.valueOf(message.get());
-          switch (messageType) {
-            case PIECE:
-              log.debug("piece message received!!!");
-              int dataSize = message.remaining() - 8;
-              byte[] data = new byte[dataSize];
-              return Optional.of(new DownloadedBlock(message.getInt(),
-                  message.getInt(), message.get(data).array()));
-            case HAVE:
-              log.debug("Have message received!!!");
-              // Add this peer as having the piece index received in message
-              int pieceIndex = message.getInt();
-              torrentDownloader.addAvailablePiece(pieceIndex, this.peer);
-              break;
-            case PIECE_REQUEST:
-              log.debug("piece request message received!!!");
-              break;
-            case CHOKE:
-              log.debug("choke message received!!!");
-              peer_choking = true;
-              throw new ConnectionChokedException("Connection has been choked!!!");
-            case UNCHOKE:
-              log.debug("unChoke message received!!!");
-              peer_choking = false;
-              break;
-            case BITFIELD:
-              log.debug("Bitfield message received!!!");
-              // Add this peer as having all the pieces index received in message
-              String bitString = BinaryDataUtils.toBinaryString(wholeMessage, 1,
-                  wholeMessage.length - 1);
-              for (int i = 0; i < bitString.length(); i++) {
-                if (bitString.charAt(i) == '1') {
-                  torrentDownloader.addAvailablePiece(i, this.peer);
-                }
-              }
-              break;
-            case INTERESTED:
-              log.info("interested message received!!!");
-              peer_interested = true;
-              dos.write(Message.buildUnChoke().array());
-              break;
-            case NOT_INTERESTED:
-              log.info("Not interested message received!!!");
-              peer_interested = false;
-              break;
-            case CANCEL:
-              log.info("cancel message received!!!");
-              break;
+    while (keepDownloading.get()) {
+      if (dis.available() > 0) {
+        // extract a full message
+        byte[] wholeMessage = extractWholeMessage(dis);
+        ByteBuffer message = ByteBuffer.wrap(wholeMessage);
+        MessageType messageType = MessageType.valueOf(message.get());
+        switch (messageType) {
+          case PIECE -> {
+            log.debug("piece message received!!!");
+            int dataSize = message.remaining() - 8;
+            byte[] data = new byte[dataSize];
+            return Optional.of(new DownloadedBlock(message.getInt(),
+                message.getInt(), message.get(data).array()));
           }
+          case HAVE -> {
+            log.debug("Have message received!!!");
+            // Add this peer as having the piece index received in message
+            int pieceIndex = message.getInt();
+            torrentDownloader.addAvailablePiece(pieceIndex, this.peer);
+          }
+          case PIECE_REQUEST -> log.debug("piece request message received!!!");
+          case CHOKE -> {
+            log.debug("choke message received!!!");
+            peer_choking = true;
+            throw new ConnectionChokedException("Connection has been choked!!!");
+          }
+          case UNCHOKE -> {
+            log.debug("unChoke message received!!!");
+            peer_choking = false;
+          }
+          case BITFIELD -> {
+            log.debug("Bitfield message received!!!");
+            // Add this peer as having all the pieces index received in message
+            String bitString = BinaryDataUtils.toBinaryString(wholeMessage, 1,
+                wholeMessage.length - 1);
+            for (int i = 0; i < bitString.length(); i++) {
+              if (bitString.charAt(i) == '1') {
+                torrentDownloader.addAvailablePiece(i, this.peer);
+              }
+            }
+          }
+          case INTERESTED -> {
+            log.info("interested message received!!!");
+            peer_interested = true;
+            dos.write(Message.buildUnChoke().array());
+          }
+          case NOT_INTERESTED -> {
+            log.info("Not interested message received!!!");
+            peer_interested = false;
+          }
+          case CANCEL -> log.info("cancel message received!!!");
         }
       }
-    } catch (IOException | ConnectionChokedException e) {
-      throw e;
     }
     return Optional.empty();
   }
@@ -302,6 +246,7 @@ public class TCPPeerConnection implements PeerConnection {
     try {
       dis.close();
       dos.close();
+      clientSocket.close();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

@@ -9,9 +9,9 @@ import java.util.List;
 class TrackerResponse {
     private Long interval;
 
-    private int leechers;
+    private Long leechers;
 
-    private int seeders;
+    private Long seeders;
 
     private List<Peer> peers;
 
@@ -23,11 +23,11 @@ class TrackerResponse {
         this.interval = interval;
     }
 
-    public void setLeechers(int leechers) {
+    public void setLeechers(Long leechers) {
         this.leechers = leechers;
     }
 
-    public void setSeeders(int seeders) {
+    public void setSeeders(Long seeders) {
         this.seeders = seeders;
     }
 
