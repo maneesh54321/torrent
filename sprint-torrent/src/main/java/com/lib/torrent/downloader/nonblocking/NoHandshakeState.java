@@ -65,7 +65,10 @@ public class NoHandshakeState implements ConnectionState {
 
   private ByteBuffer readHandshakeMessage(SocketChannel channel) throws IOException {
     ByteBuffer handshakeMessage = ByteBuffer.allocate(68);
-    channel.read(handshakeMessage);
+    int bytesRead = 0;
+    while (bytesRead < 68){
+      bytesRead += channel.read(handshakeMessage);
+    }
     handshakeMessage.flip();
     return handshakeMessage;
   }

@@ -23,7 +23,7 @@ public class Info {
 
   private final byte[] pieces;
 
-  private final Integer isPrivate;
+  private final Long isPrivate;
 
   private final byte[] infoHash;
 
@@ -38,7 +38,7 @@ public class Info {
     log.info("Info Map: " + infoMap);
     this.infoHash = calculateInfoHash(this.infoMap);
     this.pieceLength = (Long) infoMap.get("piece length");
-    this.isPrivate = (Integer) infoMap.getOrDefault("private", 0);
+    this.isPrivate = (Long) infoMap.getOrDefault("private", 0);
     this.pieces = ((ByteBuffer) infoMap.get("pieces")).array();
 
     // Create content representation

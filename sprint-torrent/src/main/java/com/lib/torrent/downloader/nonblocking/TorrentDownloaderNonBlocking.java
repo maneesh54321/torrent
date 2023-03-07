@@ -127,7 +127,7 @@ public class TorrentDownloaderNonBlocking implements Listener {
             }
             if (key.isReadable()) {
               connection.handleResponse(sc);
-              key.interestOps(SelectionKey.OP_WRITE);
+              key.interestOps(SelectionKey.OP_WRITE).interestOpsOr(SelectionKey.OP_READ);
             }
             if (key.isWritable()) {
               ByteBuffer bb = connection.getRequestMessage();

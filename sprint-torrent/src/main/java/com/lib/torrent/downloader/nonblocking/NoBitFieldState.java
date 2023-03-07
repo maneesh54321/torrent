@@ -33,7 +33,7 @@ public class NoBitFieldState implements ConnectionState {
     if (header.get() == 5) {
       log.debug("Bitfield message received!!");
       ByteBuffer messagePayload = ByteBuffer.allocate(length-1);
-      int bytesRead = socketChannel.read(messagePayload);
+      socketChannel.read(messagePayload);
       messagePayload.flip();
       this.connection.setBitfield(messagePayload);
       // update the available piece store
