@@ -1,24 +1,24 @@
 package com.maneesh.network.state;
 
-import com.lib.torrent.core.network.PeerConnection;
+import com.maneesh.core.Peer;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 
 public class HandshakeState {
 
-  private final PeerConnection peerConnection;
+  private final Peer peer;
 
-  private ByteBuffer messageBuffer;
+  private final ByteBuffer messageBuffer;
 
   private Instant handshakeStartedAt;
 
-  public HandshakeState(PeerConnection peerConnection) {
-    this.peerConnection = peerConnection;
+  public HandshakeState(Peer peer) {
+    this.peer = peer;
     messageBuffer = ByteBuffer.allocate(68);
   }
 
-  public PeerConnection getPeerConnection() {
-    return peerConnection;
+  public Peer getPeer() {
+    return peer;
   }
 
   public ByteBuffer getMessageBuffer() {
