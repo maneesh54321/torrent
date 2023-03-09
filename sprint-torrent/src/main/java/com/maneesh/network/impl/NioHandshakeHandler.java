@@ -44,7 +44,7 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
     this.torrent = torrent;
     this.handshakeMessage = ByteBuffer.allocate(HANDSHAKE_MSG_LEN);
     this.handshakeMessage.put((byte) 0x13);
-    putProtocolString(this.handshakeMessage, BITTORRENT_PROTOCOL_NAME);
+    putProtocolString(this.handshakeMessage);
     this.handshakeMessage.putInt(0);
     this.handshakeMessage.position(this.handshakeMessage.position() + 20);
     this.handshakeMessage.put(torrent.getPeerId().getBytes());
@@ -53,9 +53,9 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
         TimeUnit.MILLISECONDS);
   }
 
-  private void putProtocolString(ByteBuffer buffer, String s) {
-    for (int i = 0; i < s.length(); i++) {
-      buffer.put((byte) s.charAt(i));
+  private void putProtocolString(ByteBuffer buffer) {
+    for (int i = 0; i < BITTORRENT_PROTOCOL_NAME.length(); i++) {
+      buffer.put((byte) BITTORRENT_PROTOCOL_NAME.charAt(i));
     }
   }
 
@@ -144,8 +144,7 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
     }
   }
 
-  @Override
-  public void onHandshakeReceived(SocketChannel socketChannel, HandshakeState handshakeState) {
+  private void onHandshakeReceived(SocketChannel socketChannel, HandshakeState handshakeState) {
     // TODO register peer for IO
   }
 

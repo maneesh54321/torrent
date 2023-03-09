@@ -4,8 +4,10 @@ import com.dampcake.bencode.Bencode;
 import com.maneesh.meta.TorrentMetadata;
 import com.maneesh.network.ConnectionHandler;
 import com.maneesh.network.HandshakeHandler;
+import com.maneesh.network.PeerIOHandler;
 import com.maneesh.network.impl.NioConnectionHandler;
 import com.maneesh.network.impl.NioHandshakeHandler;
+import com.maneesh.network.impl.PeerNioIOHandler;
 import com.maneesh.peers.PeersCollector;
 import com.maneesh.peers.impl.TorrentPeersCollector;
 import com.maneesh.peers.impl.TorrentPeersSwarm;
@@ -32,6 +34,8 @@ public class Torrent {
 
   private final HandshakeHandler handshakeHandler;
 
+  private final PeerIOHandler peerIOHandler;
+
   public Torrent(String torrentFileAbsolutePath) throws IOException {
     peersQueue = new TorrentPeersSwarm();
     scheduledExecutorService = Executors.newScheduledThreadPool(5);
@@ -40,10 +44,11 @@ public class Torrent {
     uploaded = 0;
     downloaded = 0;
     left = 0;
+    torrentMetadata = TorrentMetadata.parseTorrentFile(new FileInputStream(torrentFileAbsolutePath));
     Clock clock = Clock.systemDefaultZone();
     connectionHandler = new NioConnectionHandler(30, this);
     handshakeHandler  = new NioHandshakeHandler(clock, this);
-    torrentMetadata = TorrentMetadata.parseTorrentFile(new FileInputStream(torrentFileAbsolutePath));
+    peerIOHandler = new PeerNioIOHandler(this);
     PeersCollector peersCollector = new TorrentPeersCollector(this);
   }
 
