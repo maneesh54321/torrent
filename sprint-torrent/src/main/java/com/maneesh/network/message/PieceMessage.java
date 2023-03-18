@@ -1,8 +1,8 @@
 package com.maneesh.network.message;
 
-import java.nio.channels.SocketChannel;
+import java.nio.ByteBuffer;
 
-public class PieceMessage implements IMessage {
+public class PieceMessage extends NioSocketMessage {
 
   private int pieceIndex;
 
@@ -17,8 +17,8 @@ public class PieceMessage implements IMessage {
   }
 
   @Override
-  public void send(SocketChannel sc) {
-
+  protected ByteBuffer convertToBytes() {
+    return null;
   }
 
   @Override

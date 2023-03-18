@@ -5,19 +5,23 @@ import com.maneesh.core.Peer;
 import com.maneesh.core.Torrent;
 import com.maneesh.network.PeerIOHandler;
 import com.maneesh.network.exception.BitTorrentProtocolViolationException;
-import com.maneesh.network.message.BlockMessage;
 import com.maneesh.network.message.IMessage;
-import com.maneesh.network.state.PeerConnectionState;
+import com.maneesh.network.message.MessageFactory;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
+
+  private static final Logger log = LoggerFactory.getLogger(PeerNioIOHandler.class);
 
   private final Torrent torrent;
 
@@ -25,7 +29,10 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
 
   private final ScheduledFuture<?> ioPollingTask;
 
-  public PeerNioIOHandler(Torrent torrent) throws IOException {
+  private final MessageFactory messageFactory;
+
+  public PeerNioIOHandler(Torrent torrent, MessageFactory messageFactory) throws IOException {
+    this.messageFactory = messageFactory;
     selector = Selector.open();
     this.torrent = torrent;
     ioPollingTask = torrent.getScheduledExecutorService()
@@ -34,40 +41,54 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
 
   private void pollConnectionsIO() {
     try {
-      selector.select(selectionKey -> {
+      selector.selectNow();
+      Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
+      while (keys.hasNext()) {
+        SelectionKey selectionKey = keys.next();
         SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
-        if (selectionKey.isReadable()) {
-          PeerConnectionState state = (PeerConnectionState) selectionKey.attachment();
-          try {
-            if (state.canRead(socketChannel)) {
-              IMessage message = state.readMessage();
+        Peer peer = (Peer) selectionKey.attachment();
+        try {
+          if (selectionKey.isReadable()) {
+            while (peer.canRead(socketChannel)) {
+              IMessage message = peer.readMessage();
               onDataAvailable(message);
             }
-          } catch (IOException | BitTorrentProtocolViolationException e) {
-            throw new RuntimeException(e);
           }
+          if (selectionKey.isWritable()) {
+            Optional<IMessage> blockRequestMessage = Optional.ofNullable(
+                peer.getBlockMessageQueue().poll());
+            if (blockRequestMessage.isPresent()) {
+              blockRequestMessage.get().send(socketChannel);
+            }
+          }
+        } catch (IOException | BitTorrentProtocolViolationException e) {
+          log.error("Error occurred while reading from socket in peer {}", peer, e);
+          selectionKey.cancel();
         }
-        if (selectionKey.isWritable()) {
-          PeerConnectionState state = (PeerConnectionState) selectionKey.attachment();
-          Optional<BlockMessage> blockMessage = Optional.ofNullable(state.getBlocksQueue().poll());
-          blockMessage.ifPresent(message -> message.send(socketChannel));
-        }
-      });
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+        keys.remove();
+      }
+    } catch (Exception e) {
+      log.error("Error occurred while handling I/O", e);
     }
   }
 
   @Override
   public void registerConnection(SocketChannel socketChannel, Peer peer)
       throws ClosedChannelException {
-    PeerConnectionState peerConnectionState = new PeerConnectionState(peer);
-    socketChannel.register(selector, SelectionKey.OP_READ, peerConnectionState)
-        .interestOpsAnd(SelectionKey.OP_WRITE);
+    log.debug("Registering peer {} for IO", peer);
+    socketChannel.register(selector, SelectionKey.OP_READ, peer)
+        .interestOpsOr(SelectionKey.OP_WRITE);
+    try {
+      messageFactory.buildInterested(peer).send(socketChannel);
+      peer.interested();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private void onDataAvailable(IMessage message) {
-
+    log.debug("Data available {}", message);
+    message.process();
   }
 
   @Override

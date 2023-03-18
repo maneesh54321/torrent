@@ -1,18 +1,26 @@
 package com.maneesh.network.message;
 
-import java.nio.channels.SocketChannel;
+import com.maneesh.core.Peer;
+import com.maneesh.core.Torrent;
+import java.nio.ByteBuffer;
 
-public class HaveMessage implements IMessage {
+public class HaveMessage extends NioSocketMessage {
 
   private final int pieceIndex;
 
-  public HaveMessage(int pieceIndex) {
+  private final Torrent torrent;
+
+  private final Peer peer;
+
+  public HaveMessage(int pieceIndex, Torrent torrent, Peer peer) {
     this.pieceIndex = pieceIndex;
+    this.torrent = torrent;
+    this.peer = peer;
   }
 
   @Override
-  public void send(SocketChannel sc) {
-
+  protected ByteBuffer convertToBytes() {
+    return null;
   }
 
   @Override

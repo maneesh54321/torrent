@@ -122,7 +122,7 @@ public class UDPTrackerClient implements TrackerClient {
     int n = 0;
     while (n < 8) {
       try {
-        udpSocket.setSoTimeout(15000 * 2 ^ n);
+        udpSocket.setSoTimeout(15000 * (2 ^ n));
 
         // create UDP packet with connect message to send
         int transactionId = random.nextInt(1000);

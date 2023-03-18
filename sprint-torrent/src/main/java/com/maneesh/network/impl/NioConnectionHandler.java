@@ -51,18 +51,16 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
   private void updateReadyConnections() {
     try {
       connected.select(selectionKey -> {
-        if (selectionKey.isConnectable()) {
-          try {
-            SocketChannel sc = (SocketChannel) selectionKey.channel();
-            if (sc.finishConnect()) {
-              Peer peer = (Peer) selectionKey.attachment();
-              onConnectionEstablished(sc, peer);
-              selectionKey.cancel();
-            }
-          } catch (IOException e) {
-            log.warn("Failed to connect to peer!!", e);
-            selectionKey.cancel();
+        try {
+          Peer peer = (Peer) selectionKey.attachment();
+          SocketChannel socket = (SocketChannel) selectionKey.channel();
+          if (socket.finishConnect()) {
+            onConnectionEstablished(socket, peer);
+//            selectionKey.cancel();
           }
+        } catch (IOException e) {
+          log.warn("Failed to connect to peer!!", e);
+          selectionKey.cancel();
         }
       }, 3000);
     } catch (IOException e) {
@@ -74,28 +72,33 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
     Set<SelectionKey> keys = connected.keys();
     while (keys.size() < maxConcurrentConnections && !peersQueue.isEmpty()) {
       Peer peer = peersQueue.poll();
-      SocketChannel socketChannel = null;
       try {
-        socketChannel = SocketChannel.open();
-        socketChannel.register(connected, SelectionKey.OP_CONNECT, peer);
-        socketChannel.connect(peer.getSocketAddress());
-      } catch (ClosedChannelException e) {
-        log.warn("Failed to open socket for peer {}", peer, e);
-      } catch (IOException e) {
+        SocketChannel socketChannel = SocketChannel.open();
+        socketChannel.configureBlocking(false);
         try {
-          assert socketChannel != null;
-          socketChannel.close();
-        } catch (IOException ex) {
-          log.error("Failed to close open channel!!! Fix this...");
+          socketChannel.register(connected, SelectionKey.OP_CONNECT, peer);
+          socketChannel.connect(peer.getSocketAddress());
+        } catch (ClosedChannelException e) {
+          log.warn("Failed to establish connection with peer {}", peer, e);
+        } catch (Exception e) {
+          log.warn("Exception occurred while adding new connection", e);
+          try {
+            socketChannel.close();
+          } catch (IOException ex) {
+            log.error("Failed to close open channel!!! Fix this...");
+          }
         }
+      } catch (IOException e) {
+        log.warn("Failed to create socket for peer {}", peer);
       }
     }
   }
 
   @Override
   public void onConnectionEstablished(SocketChannel socketChannel, Peer peer) {
+    log.debug("Connection established with peer {}", peer);
     // initiate handshake
-    torrent.getHandshakeHandler().initiateHandshake(socketChannel, peer);
+    torrent.getHandshakeHandler().onConnectionEstablished(socketChannel, peer);
   }
 
   @Override

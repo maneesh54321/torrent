@@ -1,6 +1,7 @@
 package com.maneesh.peers.impl;
 
 import com.maneesh.core.Peer;
+import com.maneesh.network.message.MessageFactory;
 import com.maneesh.peers.PeersStore;
 import java.net.SocketAddress;
 import java.util.AbstractQueue;
@@ -22,7 +23,10 @@ public class TorrentPeersSwarm extends AbstractQueue<Peer> implements PeersStore
   // to track the peers which are currently taken out of this store for download
   private final List<Peer> activePeers;
 
-  public TorrentPeersSwarm() {
+  private final MessageFactory messageFactory;
+
+  public TorrentPeersSwarm(MessageFactory messageFactory) {
+    this.messageFactory = messageFactory;
     deque = new ConcurrentLinkedDeque<>();
     activePeers = new ArrayList<>();
   }
@@ -41,7 +45,7 @@ public class TorrentPeersSwarm extends AbstractQueue<Peer> implements PeersStore
 
     // Add the peer to queue if it is not there in queue and active peers
     for (SocketAddress socketAddress : newPeerAddresses) {
-      Peer peer = new Peer(socketAddress);
+      Peer peer = new Peer(socketAddress, messageFactory);
       if (!deque.contains(peer) && !activePeers.contains(peer)) {
         deque.add(peer);
       }

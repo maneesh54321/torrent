@@ -5,6 +5,6 @@ import java.nio.channels.SocketChannel;
 
 public interface HandshakeHandler {
 
-  void initiateHandshake(SocketChannel socketChannel, Peer peer);
+  void onConnectionEstablished(SocketChannel socketChannel, Peer peer);
 
 }

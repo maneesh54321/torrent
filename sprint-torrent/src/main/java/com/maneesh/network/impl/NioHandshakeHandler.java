@@ -6,10 +6,10 @@ import com.maneesh.core.Torrent;
 import com.maneesh.network.HandshakeHandler;
 import com.maneesh.network.exception.BitTorrentProtocolViolationException;
 import com.maneesh.network.exception.HandshakeTimeoutException;
+import com.maneesh.network.message.IMessage;
 import com.maneesh.network.state.HandshakeState;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Iterator;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
@@ -26,7 +27,7 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
 
   private static final Logger log = LoggerFactory.getLogger(NioHandshakeHandler.class);
   private static final int HANDSHAKE_MSG_LEN = 68;
-  private static final String BITTORRENT_PROTOCOL_NAME = "Bittorrent Protocol";
+  private static final String BITTORRENT_PROTOCOL_NAME = "BitTorrent protocol";
   private static final int HANDSHAKE_TIMEOUT_SECONDS = 5;
   private final Selector selector;
   private final Clock clock;
@@ -44,50 +45,44 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
     this.torrent = torrent;
     this.handshakeMessage = ByteBuffer.allocate(HANDSHAKE_MSG_LEN);
     this.handshakeMessage.put((byte) 0x13);
-    putProtocolString(this.handshakeMessage);
+    this.handshakeMessage.put(BITTORRENT_PROTOCOL_NAME.getBytes());
     this.handshakeMessage.putInt(0);
     this.handshakeMessage.position(this.handshakeMessage.position() + 20);
     this.handshakeMessage.put(torrent.getPeerId().getBytes());
 
-    this.pollConnections = torrent.getScheduledExecutorService().scheduleAtFixedRate(this::pollConnectedPeers, 50, 50,
-        TimeUnit.MILLISECONDS);
-  }
-
-  private void putProtocolString(ByteBuffer buffer) {
-    for (int i = 0; i < BITTORRENT_PROTOCOL_NAME.length(); i++) {
-      buffer.put((byte) BITTORRENT_PROTOCOL_NAME.charAt(i));
-    }
+    this.pollConnections = torrent.getScheduledExecutorService()
+        .scheduleAtFixedRate(this::pollConnectedPeers, 50, 50,
+            TimeUnit.MILLISECONDS);
   }
 
   private void pollConnectedPeers() {
     try {
-      selector.select(selectionKey -> {
+      selector.selectNow();
+      Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
+      while (keys.hasNext()) {
+        SelectionKey selectionKey = keys.next();
         SocketChannel socket = (SocketChannel) selectionKey.channel();
+        HandshakeState handshakeState = (HandshakeState) selectionKey.attachment();
         try {
-          HandshakeState handshakeState = (HandshakeState) selectionKey.attachment();
-          if (selectionKey.isReadable()) {
-            // read the message from socket and verify if it is a handshake.
-            ByteBuffer messageBuffer = handshakeState.getMessageBuffer();
-            socket.read(messageBuffer);
-            if (!messageBuffer.hasRemaining()) {
-              // validate message if it is handshake
-              validateHandshake(messageBuffer.flip(), torrent.getTorrentMetadata().getInfo()
-                  .getInfoHash());
-              // promote connection to start downloading/uploading
-              onHandshakeReceived(socket, handshakeState);
-            } else {
-              if (Duration.between(handshakeState.getHandshakeStartedAt(), clock.instant()).toSeconds() >= HANDSHAKE_TIMEOUT_SECONDS) {
-                throw new HandshakeTimeoutException("Did not receive handshake within" + HANDSHAKE_TIMEOUT_SECONDS);
-              }
-            }
+          // read the message from socket and verify if it is a handshake.
+          ByteBuffer messageBuffer = handshakeState.getMessageBuffer();
+          socket.read(messageBuffer);
+          if (!messageBuffer.hasRemaining()) {
+            // validate message if it is handshake
+            validateHandshake(messageBuffer.flip(), torrent.getTorrentMetadata().getInfo()
+                .getInfoHash());
+            // promote connection to start downloading/uploading
+            onHandshakeReceived(socket, handshakeState);
+            selectionKey.cancel();
           }
-          if (selectionKey.isWritable()) {
-            // initiate handshake
-            sendHandshake(socket);
-            handshakeState.setHandshakeStartedAt(clock.instant());
+          if (Duration.between(handshakeState.getHandshakeStartedAt(), clock.instant())
+              .toSeconds() >= HANDSHAKE_TIMEOUT_SECONDS) {
+            throw new HandshakeTimeoutException(
+                String.format("Did not receive handshake from peer %s within %d seconds",
+                    handshakeState.getPeer(), HANDSHAKE_TIMEOUT_SECONDS));
           }
-        } catch (BitTorrentProtocolViolationException | HandshakeTimeoutException | IOException e) {
-          log.warn("Handshake failed!!", e);
+        } catch (Exception e) {
+          log.warn("Handshake failed with peer {}!!", handshakeState.getPeer(), e);
           // cancel the registration
           selectionKey.cancel();
           try {
@@ -96,8 +91,10 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
           } catch (IOException ex) {
             log.error("Failed to close the socket!!! Fix this...");
           }
+        } finally {
+          keys.remove();
         }
-      }, 3000);
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -135,17 +132,23 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
   }
 
   @Override
-  public void initiateHandshake(SocketChannel socketChannel, Peer peer) {
+  public void onConnectionEstablished(SocketChannel socketChannel, Peer peer) {
     try {
-      socketChannel.register(selector, SelectionKey.OP_WRITE, new HandshakeState(peer))
-          .interestOpsAnd(SelectionKey.OP_READ);
-    } catch (ClosedChannelException e) {
+      HandshakeState handshakeState = new HandshakeState(peer);
+      socketChannel.register(selector, SelectionKey.OP_READ, handshakeState);
+      log.debug("Initiating handshake with peer {}", peer);
+      sendHandshake(socketChannel);
+      handshakeState.setHandshakeStartedAt(clock.instant());
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private void onHandshakeReceived(SocketChannel socketChannel, HandshakeState handshakeState) {
-    // TODO register peer for IO
+  private void onHandshakeReceived(SocketChannel socketChannel, HandshakeState handshakeState)
+      throws Exception {
+    log.debug("Handshake received from Peer {}", handshakeState.getPeer());
+    // register peer for IO
+    torrent.getPeerIOHandler().registerConnection(socketChannel, handshakeState.getPeer());
   }
 
   public void stop() {

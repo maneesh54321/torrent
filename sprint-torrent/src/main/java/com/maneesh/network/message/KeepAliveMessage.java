@@ -1,12 +1,13 @@
 package com.maneesh.network.message;
 
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
-public class KeepAliveMessage implements IMessage {
+public class KeepAliveMessage extends NioSocketMessage {
 
   @Override
-  public void send(SocketChannel sc) {
-
+  protected ByteBuffer convertToBytes() {
+    return null;
   }
 
   @Override

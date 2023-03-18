@@ -1,12 +1,27 @@
 package com.maneesh.network.message;
 
-import java.nio.channels.SocketChannel;
+import com.maneesh.core.Peer;
+import java.nio.ByteBuffer;
 
-public class InterestedMessage implements IMessage {
+public class InterestedMessage extends NioSocketMessage {
+
+  private final Peer peer;
+
+  private final static ByteBuffer interestedMsgBytes = ByteBuffer.allocate(5);
+
+  static {
+    interestedMsgBytes.putInt(1);
+    interestedMsgBytes.put((byte) 2);
+  }
+
+  public InterestedMessage(Peer peer) {
+    this.peer = peer;
+  }
 
   @Override
-  public void send(SocketChannel sc) {
-
+  protected ByteBuffer convertToBytes() {
+    interestedMsgBytes.flip();
+    return interestedMsgBytes;
   }
 
   @Override

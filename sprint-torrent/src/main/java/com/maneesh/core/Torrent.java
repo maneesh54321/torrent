@@ -8,9 +8,12 @@ import com.maneesh.network.PeerIOHandler;
 import com.maneesh.network.impl.NioConnectionHandler;
 import com.maneesh.network.impl.NioHandshakeHandler;
 import com.maneesh.network.impl.PeerNioIOHandler;
-import com.maneesh.peers.PeersCollector;
+import com.maneesh.network.message.MessageFactory;
 import com.maneesh.peers.impl.TorrentPeersCollector;
 import com.maneesh.peers.impl.TorrentPeersSwarm;
+import com.maneesh.piece.AvailablePieceStore;
+import com.maneesh.piece.PieceDownloadScheduler;
+import com.maneesh.piece.impl.RarestFirstAvailablePieceStore;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.Clock;
@@ -36,8 +39,13 @@ public class Torrent {
 
   private final PeerIOHandler peerIOHandler;
 
+  private final LongRunningProcess pieceDownloadScheduler;
+
+  private final AvailablePieceStore availablePieceStore;
+
+  private final LongRunningProcess peersCollector;
+
   public Torrent(String torrentFileAbsolutePath) throws IOException {
-    peersQueue = new TorrentPeersSwarm();
     scheduledExecutorService = Executors.newScheduledThreadPool(5);
     peerId = createPeerId();
     port = 6881;
@@ -45,11 +53,15 @@ public class Torrent {
     downloaded = 0;
     left = 0;
     torrentMetadata = TorrentMetadata.parseTorrentFile(new FileInputStream(torrentFileAbsolutePath));
+    MessageFactory messageFactory = new MessageFactory(this);
+    peersQueue = new TorrentPeersSwarm(messageFactory);
     Clock clock = Clock.systemDefaultZone();
     connectionHandler = new NioConnectionHandler(30, this);
     handshakeHandler  = new NioHandshakeHandler(clock, this);
-    peerIOHandler = new PeerNioIOHandler(this);
-    PeersCollector peersCollector = new TorrentPeersCollector(this);
+    peerIOHandler = new PeerNioIOHandler(this, messageFactory);
+    availablePieceStore = new RarestFirstAvailablePieceStore();
+    pieceDownloadScheduler = new PieceDownloadScheduler(this, availablePieceStore);
+    peersCollector = new TorrentPeersCollector(this);
   }
 
   private String createPeerId(){
@@ -106,5 +118,21 @@ public class Torrent {
 
   public void setLeft(long left) {
     this.left = left;
+  }
+
+  public PeerIOHandler getPeerIOHandler() {
+    return peerIOHandler;
+  }
+
+  public LongRunningProcess getPieceDownloadScheduler() {
+    return pieceDownloadScheduler;
+  }
+
+  public AvailablePieceStore getAvailablePieceStore() {
+    return availablePieceStore;
+  }
+
+  public LongRunningProcess getPeersCollector() {
+    return peersCollector;
   }
 }

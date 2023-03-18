@@ -89,7 +89,7 @@ class TrackerRequestBuilder implements InfoHashTrackerRequestBuilder,
   @Override
   public FinalTrackerRequestBuilder noPeerId(int noPeerId) {
     this.noPeerId = noPeerId;
-    return null;
+    return this;
   }
 
   @Override

@@ -1,12 +1,19 @@
 package com.maneesh.network.message;
 
-import java.nio.channels.SocketChannel;
+import com.maneesh.core.Peer;
+import java.nio.ByteBuffer;
 
-public class PortMessage implements IMessage{
+public class PortMessage extends NioSocketMessage {
+
+  private final Peer peer;
+
+  public PortMessage(Peer peer) {
+    this.peer = peer;
+  }
 
   @Override
-  public void send(SocketChannel sc) {
-
+  protected ByteBuffer convertToBytes() {
+    return null;
   }
 
   @Override

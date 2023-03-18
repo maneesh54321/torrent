@@ -2,7 +2,6 @@ package com.maneesh.peers.impl;
 
 import com.maneesh.core.LongRunningProcess;
 import com.maneesh.core.Torrent;
-import com.maneesh.peers.PeersCollector;
 import com.maneesh.peers.PeersStore;
 import com.maneesh.peers.TrackerClient;
 import com.maneesh.peers.impl.http.HttpTrackerClient;
@@ -12,8 +11,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class TorrentPeersCollector implements PeersCollector, LongRunningProcess {
+public class TorrentPeersCollector implements LongRunningProcess {
+
+  private static final Logger log = LoggerFactory.getLogger(TorrentPeersCollector.class);
 
   private final TrackerClient httpTrackerClient;
 
@@ -40,12 +43,11 @@ public class TorrentPeersCollector implements PeersCollector, LongRunningProcess
     collectionTaskFuture = executorService.schedule(peersCollectionTask, 50, TimeUnit.MILLISECONDS);
   }
 
-  @Override
-  public void collectPeers() {
+  private void collectPeers() {
     // collect peers
     for (String announceUrl : torrent.getTorrentMetadata().getAnnounceList()) {
       Optional<TrackerResponse> maybeTrackerResponse = Optional.empty();
-
+      log.debug("Trying tracker: {}", announceUrl);
       if (isHttpTracker.test(announceUrl)) {
         maybeTrackerResponse = httpTrackerClient.requestPeers(announceUrl, torrent);
       } else if (isUDPTracker.test(announceUrl)) {
@@ -61,6 +63,7 @@ public class TorrentPeersCollector implements PeersCollector, LongRunningProcess
         return;
       }
     }
+    throw new RuntimeException("Failed to fetch peers from tracker!!");
   }
 
   @Override
