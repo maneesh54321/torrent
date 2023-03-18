@@ -5,7 +5,6 @@ import com.maneesh.core.Peer;
 import com.maneesh.core.Torrent;
 import com.maneesh.network.HandshakeHandler;
 import com.maneesh.network.exception.BitTorrentProtocolViolationException;
-import com.maneesh.network.exception.HandshakeTimeoutException;
 import com.maneesh.network.state.HandshakeState;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -55,6 +54,25 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
   }
 
   private void pollConnectedPeers() {
+    // check for handshake
+    checkHandshake();
+    // cancel handshake timed out connections
+    cancelTimedOutConnections();
+  }
+
+  private void cancelTimedOutConnections() {
+    for (SelectionKey selectionKey : selector.keys()) {
+      HandshakeState handshakeState = (HandshakeState) selectionKey.attachment();
+      if (Duration.between(clock.instant().minusSeconds(HANDSHAKE_TIMEOUT_SECONDS),
+          handshakeState.getHandshakeStartedAt()).isNegative()) {
+        log.warn("Did not receive handshake from peer {} within {} seconds",
+            handshakeState.getPeer(), HANDSHAKE_TIMEOUT_SECONDS);
+        selectionKey.cancel();
+      }
+    }
+  }
+
+  private void checkHandshake() {
     try {
       selector.selectNow();
       Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
@@ -73,12 +91,6 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
             // promote connection to start downloading/uploading
             onHandshakeReceived(socket, handshakeState);
             selectionKey.cancel();
-          }
-          if (Duration.between(handshakeState.getHandshakeStartedAt(), clock.instant())
-              .toSeconds() >= HANDSHAKE_TIMEOUT_SECONDS) {
-            throw new HandshakeTimeoutException(
-                String.format("Did not receive handshake from peer %s within %d seconds",
-                    handshakeState.getPeer(), HANDSHAKE_TIMEOUT_SECONDS));
           }
         } catch (Exception e) {
           log.warn("Handshake failed with peer {}!!", handshakeState.getPeer(), e);

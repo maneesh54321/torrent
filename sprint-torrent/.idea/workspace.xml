@@ -4,14 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ff61bee9-25dd-4308-890d-84bfee837696" name="Changes" comment="Add piece message processing logic and support for total active connections in PeerIOHandler">
-      <changelist_data name="Maneesh Singh" email="maneesh@maneeshs-macbook-air.local" />
+    <list default="true" id="ff61bee9-25dd-4308-890d-84bfee837696" name="Changes" comment="Fix handshake timeout logic">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Torrent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Torrent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioHandshakeHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioHandshakeHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/AvailablePiece.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/AvailablePiece.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,6 +46,7 @@
   <component name="Git.Settings">
     <option name="PREVIOUS_COMMIT_AUTHORS">
       <list>
+        <option value="maneesh &lt;maneesh54321@gmail.com&gt;" />
         <option value="Maneesh Singh &lt;maneesh@maneeshs-macbook-air.local&gt;" />
       </list>
     </option>
@@ -146,7 +141,63 @@
       <option name="project" value="LOCAL" />
       <updated>1679154903352</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Add downloaded content disk writer">
+      <created>1679155078134</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1679155078134</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Add logic to process piece messages">
+      <created>1679155194622</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1679155194622</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Add logic to process piece messages">
+      <created>1679155206647</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1679155206647</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Add connection timeout in NioConnectionHandler&#10;- Fix AvailablePiece immutable peers collection">
+      <created>1679155324493</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1679155324493</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Fix handshake timeout logic">
+      <created>1679155738099</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1679155738099</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Fix handshake timeout logic">
+      <created>1679155975268</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1679155975268</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Fix handshake timeout logic">
+      <created>1679156080949</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1679156080949</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Fix handshake timeout logic">
+      <created>1679156087437</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1679156087437</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -165,21 +216,15 @@
       <path value="$PROJECT_DIR$" />
     </ignored-roots>
     <MESSAGE value="Add piece message processing logic and support for total active connections in PeerIOHandler" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add piece message processing logic and support for total active connections in PeerIOHandler" />
+    <MESSAGE value="Add downloaded content disk writer" />
+    <MESSAGE value="Add logic to process piece messages" />
+    <MESSAGE value="Add connection timeout in NioConnectionHandler&#10;- Fix AvailablePiece immutable peers collection" />
+    <MESSAGE value="Fix handshake timeout logic" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix handshake timeout logic" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersCollector.java</url>
-          <line>65</line>
-          <option name="timeStamp" value="21" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersCollector.java</url>
-          <line>51</line>
-          <option name="timeStamp" value="28" />
-        </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/http/HttpTrackerClient.java</url>
           <line>18</line>

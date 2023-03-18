@@ -14,7 +14,6 @@ import java.nio.channels.SocketChannel;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -54,11 +53,9 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
   }
 
   private void cancelTimedOutConnections() {
-    Iterator<SelectionKey> keys = connected.keys().iterator();
-    while (keys.hasNext()) {
-      SelectionKey selectionKey = keys.next();
+    for (SelectionKey selectionKey : connected.keys()) {
       PeerConnectionState peerConnectionState = (PeerConnectionState) selectionKey.attachment();
-      if (Duration.between(peerConnectionState.getStartedAt(), Instant.now().minusSeconds(5))
+      if (Duration.between(Instant.now().minusSeconds(5), peerConnectionState.getStartedAt())
           .isNegative()) {
         selectionKey.cancel();
       }
