@@ -1,6 +1,7 @@
 package com.maneesh.piece;
 
 import com.maneesh.core.Peer;
+import java.util.ArrayList;
 import java.util.List;
 
 public class AvailablePiece {
@@ -10,7 +11,8 @@ public class AvailablePiece {
 
   public AvailablePiece(int pieceIndex, Peer peer) {
     this.pieceIndex = pieceIndex;
-    this.peers = List.of(peer);
+    this.peers = new ArrayList<>();
+    peers.add(peer);
   }
 
   public void addPeer(Peer peer){

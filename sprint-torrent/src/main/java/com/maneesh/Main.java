@@ -21,9 +21,10 @@ public class Main {
       ((LongRunningProcess) torrent.getPeerIOHandler()).stop();
       ((LongRunningProcess) torrent.getConnectionHandler()).stop();
       ((LongRunningProcess) torrent.getHandshakeHandler()).stop();
-      torrent.getPieceDownloadScheduler().stop();
+      ((LongRunningProcess) torrent.getPieceDownloadScheduler()).stop();
       torrent.getPeersCollector().stop();
       torrent.getScheduledExecutorService().shutdown();
+      torrent.getContentManager().shutdown();
     }
   }
 }

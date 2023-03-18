@@ -4,32 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ff61bee9-25dd-4308-890d-84bfee837696" name="Changes" comment="">
+    <list default="true" id="ff61bee9-25dd-4308-890d-84bfee837696" name="Changes" comment="Add piece message processing logic and support for total active connections in PeerIOHandler">
+      <changelist_data name="Maneesh Singh" email="maneesh@maneeshs-macbook-air.local" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Peer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Peer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Torrent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Torrent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/HandshakeHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/HandshakeHandler.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioHandshakeHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioHandshakeHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/PeerNioIOHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/PeerNioIOHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BitfieldMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BitfieldMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BlockRequestMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BlockRequestMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/CancelMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/CancelMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/ChokeMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/ChokeMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/HaveMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/HaveMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/IMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/IMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/InterestedMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/InterestedMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/KeepAliveMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/KeepAliveMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/MessageFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/MessageFactory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/NotInterestedMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/NotInterestedMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/PieceMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/PieceMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/PortMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/PortMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/UnChokeMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/UnChokeMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersCollector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersCollector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersSwarm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersSwarm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/http/TrackerRequestBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/http/TrackerRequestBuilder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/udp/UDPTrackerClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/udp/UDPTrackerClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/AvailablePiece.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/AvailablePiece.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,12 +43,18 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
+        <option value="Enum" />
         <option value="Interface" />
         <option value="Class" />
       </list>
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="PREVIOUS_COMMIT_AUTHORS">
+      <list>
+        <option value="Maneesh Singh &lt;maneesh@maneeshs-macbook-air.local&gt;" />
+      </list>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
   <component name="HighlightingSettingsPerFile">
@@ -137,6 +125,28 @@
       <option name="presentableId" value="Default" />
       <updated>1678065346088</updated>
     </task>
+    <task id="LOCAL-00001" summary="Add piece message processing logic and support for total active connections in PeerIOHandler">
+      <created>1679154782907</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1679154782907</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Add piece message processing logic and support for total active connections in PeerIOHandler">
+      <created>1679154863302</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1679154863302</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Add piece message processing logic and support for total active connections in PeerIOHandler">
+      <created>1679154903352</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1679154903352</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -154,6 +164,8 @@
     <ignored-roots>
       <path value="$PROJECT_DIR$" />
     </ignored-roots>
+    <MESSAGE value="Add piece message processing logic and support for total active connections in PeerIOHandler" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add piece message processing logic and support for total active connections in PeerIOHandler" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -189,9 +201,9 @@
           <option name="timeStamp" value="33" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BlockRequestMessage.java</url>
-          <line>20</line>
-          <option name="timeStamp" value="68" />
+          <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/PieceDownloadSchedulerImpl.java</url>
+          <line>113</line>
+          <option name="timeStamp" value="69" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

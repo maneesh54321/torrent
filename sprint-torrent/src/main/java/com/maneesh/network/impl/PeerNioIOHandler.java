@@ -7,6 +7,7 @@ import com.maneesh.network.PeerIOHandler;
 import com.maneesh.network.exception.BitTorrentProtocolViolationException;
 import com.maneesh.network.message.IMessage;
 import com.maneesh.network.message.MessageFactory;
+import com.maneesh.piece.PieceDownloadScheduler;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
@@ -23,7 +24,7 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
 
   private static final Logger log = LoggerFactory.getLogger(PeerNioIOHandler.class);
 
-  private final Torrent torrent;
+  private final PieceDownloadScheduler pieceDownloadScheduler;
 
   private final Selector selector;
 
@@ -34,7 +35,7 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
   public PeerNioIOHandler(Torrent torrent, MessageFactory messageFactory) throws IOException {
     this.messageFactory = messageFactory;
     selector = Selector.open();
-    this.torrent = torrent;
+    this.pieceDownloadScheduler = torrent.getPieceDownloadScheduler();
     ioPollingTask = torrent.getScheduledExecutorService()
         .scheduleAtFixedRate(this::pollConnectionsIO, 50, 50, TimeUnit.MILLISECONDS);
   }
@@ -49,10 +50,7 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
         Peer peer = (Peer) selectionKey.attachment();
         try {
           if (selectionKey.isReadable()) {
-            while (peer.canRead(socketChannel)) {
-              IMessage message = peer.readMessage();
-              onDataAvailable(message);
-            }
+            onDataAvailable(peer, socketChannel);
           }
           if (selectionKey.isWritable()) {
             Optional<IMessage> blockRequestMessage = Optional.ofNullable(
@@ -63,6 +61,7 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
           }
         } catch (IOException | BitTorrentProtocolViolationException e) {
           log.error("Error occurred while reading from socket in peer {}", peer, e);
+          pieceDownloadScheduler.failBlocksDownload(peer.getBlockMessageQueue());
           selectionKey.cancel();
         }
         keys.remove();
@@ -86,9 +85,17 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
     }
   }
 
-  private void onDataAvailable(IMessage message) {
-    log.debug("Data available {}", message);
-    message.process();
+  @Override
+  public int getTotalActiveConnections() {
+    return selector.keys().size();
+  }
+
+  private void onDataAvailable(Peer peer, SocketChannel socketChannel)
+      throws IOException, BitTorrentProtocolViolationException {
+    while (peer.canRead(socketChannel)) {
+      IMessage message = peer.readMessage();
+      message.process();
+    }
   }
 
   @Override

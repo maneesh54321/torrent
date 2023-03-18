@@ -6,7 +6,6 @@ import com.maneesh.core.Torrent;
 import com.maneesh.network.HandshakeHandler;
 import com.maneesh.network.exception.BitTorrentProtocolViolationException;
 import com.maneesh.network.exception.HandshakeTimeoutException;
-import com.maneesh.network.message.IMessage;
 import com.maneesh.network.state.HandshakeState;
 import java.io.IOException;
 import java.nio.ByteBuffer;

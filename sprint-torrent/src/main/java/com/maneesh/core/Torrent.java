@@ -1,6 +1,8 @@
 package com.maneesh.core;
 
 import com.dampcake.bencode.Bencode;
+import com.maneesh.content.ContentManager;
+import com.maneesh.content.impl.ContentManagerRandomAccessFileImpl;
 import com.maneesh.meta.TorrentMetadata;
 import com.maneesh.network.ConnectionHandler;
 import com.maneesh.network.HandshakeHandler;
@@ -13,6 +15,7 @@ import com.maneesh.peers.impl.TorrentPeersCollector;
 import com.maneesh.peers.impl.TorrentPeersSwarm;
 import com.maneesh.piece.AvailablePieceStore;
 import com.maneesh.piece.PieceDownloadScheduler;
+import com.maneesh.piece.impl.PieceDownloadSchedulerImpl;
 import com.maneesh.piece.impl.RarestFirstAvailablePieceStore;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -39,28 +42,31 @@ public class Torrent {
 
   private final PeerIOHandler peerIOHandler;
 
-  private final LongRunningProcess pieceDownloadScheduler;
+  private final PieceDownloadSchedulerImpl pieceDownloadScheduler;
 
   private final AvailablePieceStore availablePieceStore;
 
   private final LongRunningProcess peersCollector;
 
+  private final ContentManager contentManager;
+
   public Torrent(String torrentFileAbsolutePath) throws IOException {
-    scheduledExecutorService = Executors.newScheduledThreadPool(5);
+    scheduledExecutorService = Executors.newScheduledThreadPool(10);
     peerId = createPeerId();
     port = 6881;
     uploaded = 0;
     downloaded = 0;
     left = 0;
     torrentMetadata = TorrentMetadata.parseTorrentFile(new FileInputStream(torrentFileAbsolutePath));
+    contentManager = new ContentManagerRandomAccessFileImpl(this);
     MessageFactory messageFactory = new MessageFactory(this);
     peersQueue = new TorrentPeersSwarm(messageFactory);
     Clock clock = Clock.systemDefaultZone();
-    connectionHandler = new NioConnectionHandler(30, this);
+    connectionHandler = new NioConnectionHandler(30, this, clock);
     handshakeHandler  = new NioHandshakeHandler(clock, this);
     peerIOHandler = new PeerNioIOHandler(this, messageFactory);
     availablePieceStore = new RarestFirstAvailablePieceStore();
-    pieceDownloadScheduler = new PieceDownloadScheduler(this, availablePieceStore);
+    pieceDownloadScheduler = new PieceDownloadSchedulerImpl(this, availablePieceStore);
     peersCollector = new TorrentPeersCollector(this);
   }
 
@@ -124,7 +130,7 @@ public class Torrent {
     return peerIOHandler;
   }
 
-  public LongRunningProcess getPieceDownloadScheduler() {
+  public PieceDownloadScheduler getPieceDownloadScheduler() {
     return pieceDownloadScheduler;
   }
 
@@ -134,5 +140,9 @@ public class Torrent {
 
   public LongRunningProcess getPeersCollector() {
     return peersCollector;
+  }
+
+  public ContentManager getContentManager() {
+    return contentManager;
   }
 }
