@@ -1,11 +1,15 @@
-package com.maneesh.piece;
+package com.maneesh.piece.impl;
 
+import com.maneesh.content.ContentManager;
+import com.maneesh.content.DownloadedBlock;
 import com.maneesh.core.LongRunningProcess;
 import com.maneesh.core.Peer;
 import com.maneesh.core.Torrent;
 import com.maneesh.network.message.BlockRequestMessage;
 import com.maneesh.network.message.IMessage;
-import com.maneesh.network.message.PieceMessage;
+import com.maneesh.piece.AvailablePiece;
+import com.maneesh.piece.AvailablePieceStore;
+import com.maneesh.piece.PieceDownloadScheduler;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,9 +21,9 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PieceDownloadScheduler implements LongRunningProcess {
+public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongRunningProcess {
 
-  private static final Logger log = LoggerFactory.getLogger(PieceDownloadScheduler.class);
+  private static final Logger log = LoggerFactory.getLogger(PieceDownloadSchedulerImpl.class);
 
   private static final int DEFAULT_BLOCK_SIZE = 1 << 14;
   private final Torrent torrent;
@@ -30,9 +34,11 @@ public class PieceDownloadScheduler implements LongRunningProcess {
   private int blocksDownloaded;
   private int totalBlocks;
   private AvailablePiece currentlyDownloadingPiece;
+  private final ContentManager contentManager;
 
-  public PieceDownloadScheduler(Torrent torrent, AvailablePieceStore availablePieceStore) {
+  public PieceDownloadSchedulerImpl(Torrent torrent, AvailablePieceStore availablePieceStore) {
     this.torrent = torrent;
+    this.contentManager = torrent.getContentManager();
     this.availablePieceStore = availablePieceStore;
     this.downloading = false;
     this.pendingBlockRequests = new ArrayDeque<>();
@@ -102,8 +108,10 @@ public class PieceDownloadScheduler implements LongRunningProcess {
     return blockRequests;
   }
 
-  public void completeBlockDownload(PieceMessage piece) {
-    // TODO Write this piece block to disk and mark the block downloaded
+  @Override
+  public void completeBlockDownload(DownloadedBlock downloadedBlock) {
+    // Write this piece block to disk and mark the block downloaded
+    contentManager.writeToDiskAsync(downloadedBlock);
     // if complete piece is downloaded, set downloading = false
     blocksDownloaded++;
     if (blocksDownloaded == totalBlocks) {
@@ -111,7 +119,8 @@ public class PieceDownloadScheduler implements LongRunningProcess {
     }
   }
 
-  public void failedBlockDownloads(Collection<IMessage> messages) {
+  @Override
+  public void failBlocksDownload(Collection<IMessage> messages) {
     pendingBlockRequests.addAll(messages);
   }
 
