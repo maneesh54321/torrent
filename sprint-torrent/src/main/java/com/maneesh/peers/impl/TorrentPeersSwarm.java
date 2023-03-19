@@ -2,19 +2,19 @@ package com.maneesh.peers.impl;
 
 import com.maneesh.core.Peer;
 import com.maneesh.network.message.MessageFactory;
+import com.maneesh.peers.PeersQueue;
 import com.maneesh.peers.PeersStore;
+import com.maneesh.piece.PieceDownloadScheduler;
 import java.net.SocketAddress;
-import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TorrentPeersSwarm extends AbstractQueue<Peer> implements PeersStore {
+public class TorrentPeersSwarm implements PeersStore, PeersQueue {
 
   private static final Logger log = LoggerFactory.getLogger(TorrentPeersSwarm.class);
 
@@ -25,8 +25,11 @@ public class TorrentPeersSwarm extends AbstractQueue<Peer> implements PeersStore
 
   private final MessageFactory messageFactory;
 
-  public TorrentPeersSwarm(MessageFactory messageFactory) {
+  private final PieceDownloadScheduler pieceDownloadScheduler;
+
+  public TorrentPeersSwarm(MessageFactory messageFactory, PieceDownloadScheduler pieceDownloadScheduler) {
     this.messageFactory = messageFactory;
+    this.pieceDownloadScheduler = pieceDownloadScheduler;
     deque = new ConcurrentLinkedDeque<>();
     activePeers = new ArrayList<>();
   }
@@ -45,21 +48,11 @@ public class TorrentPeersSwarm extends AbstractQueue<Peer> implements PeersStore
 
     // Add the peer to queue if it is not there in queue and active peers
     for (SocketAddress socketAddress : newPeerAddresses) {
-      Peer peer = new Peer(socketAddress, messageFactory);
+      Peer peer = new Peer(socketAddress, messageFactory, pieceDownloadScheduler);
       if (!deque.contains(peer) && !activePeers.contains(peer)) {
         deque.add(peer);
       }
     }
-  }
-
-  @Override
-  public Iterator<Peer> iterator() {
-    return deque.iterator();
-  }
-
-  @Override
-  public int size() {
-    return deque.size();
   }
 
   @Override
@@ -76,7 +69,7 @@ public class TorrentPeersSwarm extends AbstractQueue<Peer> implements PeersStore
   }
 
   @Override
-  public Peer peek() {
-    return deque.peek();
+  public boolean isEmpty() {
+    return this.deque.isEmpty();
   }
 }

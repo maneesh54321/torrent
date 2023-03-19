@@ -6,8 +6,10 @@ import com.maneesh.core.Torrent;
 import com.maneesh.network.ConnectionHandler;
 import com.maneesh.network.PeerIOHandler;
 import com.maneesh.network.state.PeerConnectionState;
+import com.maneesh.peers.PeersQueue;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -15,7 +17,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
@@ -27,7 +28,7 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
 
   private final int maxConcurrentConnections;
   private final ScheduledFuture<?> pollingConnectorTask;
-  private final Queue<Peer> peersQueue;
+  private final PeersQueue peersQueue;
   private final Selector connected;
 
   private final Torrent torrent;
@@ -60,10 +61,10 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
 
   private void cancelTimedOutConnections() {
     for (SelectionKey selectionKey : connected.keys()) {
-      PeerConnectionState peerConnectionState = (PeerConnectionState) selectionKey.attachment();
+      PeerConnectionState peerConnectionState = getPeerConnectionStateFromKey(selectionKey);
       if (Duration.between(Instant.now().minusSeconds(5), peerConnectionState.getStartedAt())
           .isNegative()) {
-        selectionKey.cancel();
+        cancelPeerConnection(selectionKey);
       }
     }
   }
@@ -71,7 +72,7 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
   private void updateReadyConnections() throws IOException {
     connected.selectNow();
     for (SelectionKey selectionKey : connected.selectedKeys()) {
-      PeerConnectionState peerConnectionState = (PeerConnectionState) selectionKey.attachment();
+      PeerConnectionState peerConnectionState = getPeerConnectionStateFromKey(selectionKey);
       SocketChannel socket = (SocketChannel) selectionKey.channel();
       try {
         if (socket.finishConnect()) {
@@ -80,7 +81,7 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
         }
       } catch (IOException e) {
         log.warn("Failed to connect to peer!!", e);
-        selectionKey.cancel();
+        cancelPeerConnection(selectionKey);
       }
     }
   }
@@ -122,6 +123,23 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
     int connectionsInProgress = connected.keys().size();
     int activeConnections = peerIOHandler.getTotalActiveConnections();
     return (connectionsInProgress + activeConnections) < maxConcurrentConnections;
+  }
+
+  private void cancelPeerConnection(SelectionKey selectionKey) {
+    if (null != selectionKey) {
+      peersQueue.offer(getPeerConnectionStateFromKey(selectionKey).getPeer());
+      selectionKey.cancel();
+      SelectableChannel socket = selectionKey.channel();
+      try {
+        socket.close();
+      } catch (IOException e) {
+        log.error("Error occurred while closing the socket {}!!! Fix this...", socket);
+      }
+    }
+  }
+
+  private PeerConnectionState getPeerConnectionStateFromKey(SelectionKey key) {
+    return (PeerConnectionState) key.attachment();
   }
 
   @Override

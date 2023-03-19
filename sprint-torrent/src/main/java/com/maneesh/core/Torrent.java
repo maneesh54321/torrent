@@ -11,6 +11,7 @@ import com.maneesh.network.impl.NioConnectionHandler;
 import com.maneesh.network.impl.NioHandshakeHandler;
 import com.maneesh.network.impl.PeerNioIOHandler;
 import com.maneesh.network.message.MessageFactory;
+import com.maneesh.peers.PeersQueue;
 import com.maneesh.peers.impl.TorrentPeersCollector;
 import com.maneesh.peers.impl.TorrentPeersSwarm;
 import com.maneesh.piece.AvailablePieceStore;
@@ -20,7 +21,6 @@ import com.maneesh.piece.impl.RarestFirstAvailablePieceStore;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.Clock;
-import java.util.Queue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.slf4j.Logger;
@@ -30,7 +30,7 @@ public class Torrent {
 
   public static final Bencode BENCODE = new Bencode();
   private static final Logger log = LoggerFactory.getLogger(Torrent.class);
-  private final Queue<Peer> peersQueue;
+  private final PeersQueue peersQueue;
   private final ScheduledExecutorService scheduledExecutorService;
   private final TorrentMetadata torrentMetadata;
   private final int port;
@@ -58,13 +58,13 @@ public class Torrent {
     contentManager = new ContentManagerRandomAccessFileImpl(scheduledExecutorService,
         torrentMetadata.getInfo());
     MessageFactory messageFactory = new MessageFactory(this);
-    peersQueue = new TorrentPeersSwarm(messageFactory);
     Clock clock = Clock.systemDefaultZone();
     availablePieceStore = new RarestFirstAvailablePieceStore();
     pieceDownloadScheduler = new PieceDownloadSchedulerImpl(scheduledExecutorService,
         torrentMetadata.getInfo(), contentManager, availablePieceStore);
+    peersQueue = new TorrentPeersSwarm(messageFactory, pieceDownloadScheduler);
     connectionHandler = new NioConnectionHandler(30, this, clock);
-    handshakeHandler = new NioHandshakeHandler(this, clock);
+    handshakeHandler = new NioHandshakeHandler(this, clock, peersQueue);
     peerIOHandler = new PeerNioIOHandler(this, messageFactory);
     peersCollector = new TorrentPeersCollector(this);
   }
@@ -73,7 +73,7 @@ public class Torrent {
     return "-SP1000-uartcg486250";
   }
 
-  public Queue<Peer> getPeersQueue() {
+  public PeersQueue getPeersQueue() {
     return peersQueue;
   }
 

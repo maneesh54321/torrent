@@ -1,6 +1,7 @@
 package com.maneesh.network.message;
 
 import com.maneesh.core.Peer;
+import com.maneesh.network.exception.ConnectionChokedException;
 import java.nio.ByteBuffer;
 
 public class ChokeMessage extends NioSocketMessage {
@@ -17,8 +18,9 @@ public class ChokeMessage extends NioSocketMessage {
   }
 
   @Override
-  public void process() {
+  public void process() throws ConnectionChokedException {
     // handle choke message.
     peer.choke();
+    throw new ConnectionChokedException(String.format("Peer %s has choked the connection!!", peer));
   }
 }

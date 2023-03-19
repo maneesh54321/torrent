@@ -59,7 +59,7 @@ public class MessageFactory {
           int offset = payload.getInt();
           byte[] data = new byte[size - 9];
           payload.get(data);
-          return new PieceMessage(torrent, pieceIndex, offset, data);
+          return new PieceMessage(peer, pieceIndex, offset, data);
         }
         case 8 -> {
           log.debug("Cancel message received!!");

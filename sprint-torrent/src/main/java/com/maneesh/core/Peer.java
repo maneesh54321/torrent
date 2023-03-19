@@ -1,36 +1,47 @@
 package com.maneesh.core;
 
+import com.maneesh.content.DownloadedBlock;
 import com.maneesh.network.exception.BitTorrentProtocolViolationException;
 import com.maneesh.network.message.IMessage;
 import com.maneesh.network.message.MessageFactory;
+import com.maneesh.network.message.PieceMessage;
+import com.maneesh.piece.PieceDownloadScheduler;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Queue;
 
 public class Peer {
 
   private static final int LENGTH_BUFFER_SIZE = 4;
-
   private static final int BUFFER_SIZE = (1 << 14) + LENGTH_BUFFER_SIZE;
 
   private final SocketAddress socketAddress;
-
   private final Queue<IMessage> blockMessageQueue;
+
+  private final List<IMessage> inProgress;
+
   private final MessageFactory messageFactory;
+  private final PieceDownloadScheduler pieceDownloadScheduler;
   private ByteBuffer buffer;
   private boolean choked;
   private boolean am_interested;
 
-  public Peer(SocketAddress socketAddress, MessageFactory messageFactory) {
+  public Peer(SocketAddress socketAddress, MessageFactory messageFactory,
+      PieceDownloadScheduler pieceDownloadScheduler) {
     this.socketAddress = socketAddress;
+    this.messageFactory = messageFactory;
+    this.pieceDownloadScheduler = pieceDownloadScheduler;
     blockMessageQueue = new ArrayDeque<>();
+    inProgress = new ArrayList<>();
     buffer = ByteBuffer.allocate(BUFFER_SIZE);
     buffer.limit(LENGTH_BUFFER_SIZE);
-    this.messageFactory = messageFactory;
     choked = true;
     am_interested = false;
   }
@@ -96,8 +107,16 @@ public class Peer {
     blockMessageQueue.add(message);
   }
 
-  public Queue<IMessage> getBlockMessageQueue() {
-    return blockMessageQueue;
+  public Optional<IMessage> getNextPendingBlock() {
+    Optional<IMessage> nextBlock = Optional.ofNullable(blockMessageQueue.poll());
+    nextBlock.ifPresent(inProgress::add);
+    return nextBlock;
+  }
+
+  public List<IMessage> drainInProgress() {
+    List<IMessage> result = new ArrayList<>(inProgress);
+    inProgress.clear();
+    return result;
   }
 
   public void interested() {
@@ -143,5 +162,13 @@ public class Peer {
     return "Peer{" +
         "socketAddress=" + socketAddress +
         '}';
+  }
+
+  public void completeBlockDownload(DownloadedBlock downloadedBlock) {
+    // mark this block as completed by this peer.
+    inProgress.removeIf(
+        (message) -> message.equals(new PieceMessage(null, downloadedBlock.pieceIndex(),
+            downloadedBlock.offset(), null)));
+    pieceDownloadScheduler.completeBlockDownload(downloadedBlock);
   }
 }

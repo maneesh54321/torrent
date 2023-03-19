@@ -7,5 +7,5 @@ public interface IMessage {
 
   void send(SocketChannel sc) throws IOException;
 
-  void process();
+  void process() throws IOException;
 }
