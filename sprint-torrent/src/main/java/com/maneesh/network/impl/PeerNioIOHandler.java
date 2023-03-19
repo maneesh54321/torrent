@@ -9,7 +9,6 @@ import com.maneesh.network.message.IMessage;
 import com.maneesh.network.message.MessageFactory;
 import com.maneesh.piece.PieceDownloadScheduler;
 import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -24,6 +23,8 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
 
   private static final Logger log = LoggerFactory.getLogger(PeerNioIOHandler.class);
 
+  private final Torrent torrent;
+
   private final PieceDownloadScheduler pieceDownloadScheduler;
 
   private final Selector selector;
@@ -34,8 +35,9 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
 
   public PeerNioIOHandler(Torrent torrent, MessageFactory messageFactory) throws IOException {
     this.messageFactory = messageFactory;
-    selector = Selector.open();
+    this.torrent = torrent;
     this.pieceDownloadScheduler = torrent.getPieceDownloadScheduler();
+    selector = Selector.open();
     ioPollingTask = torrent.getScheduledExecutorService()
         .scheduleAtFixedRate(this::pollConnectionsIO, 50, 50, TimeUnit.MILLISECONDS);
   }
@@ -60,28 +62,32 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
             }
           }
         } catch (IOException | BitTorrentProtocolViolationException e) {
-          log.error("Error occurred while reading from socket in peer {}", peer, e);
-          pieceDownloadScheduler.failBlocksDownload(peer.getBlockMessageQueue());
+          log.error("Error occurred while reading from socket of peer {}", peer, e);
+          pieceDownloadScheduler.failBlocksDownload(peer.getBlockMessageQueue(), peer);
           selectionKey.cancel();
         }
         keys.remove();
       }
     } catch (Exception e) {
       log.error("Error occurred while handling I/O", e);
+      torrent.shutdown();
     }
   }
 
   @Override
-  public void registerConnection(SocketChannel socketChannel, Peer peer)
-      throws ClosedChannelException {
+  public void registerConnection(SocketChannel socketChannel, Peer peer) {
     log.debug("Registering peer {} for IO", peer);
-    socketChannel.register(selector, SelectionKey.OP_READ, peer)
-        .interestOpsOr(SelectionKey.OP_WRITE);
+    SelectionKey selectionKey = null;
     try {
+      selectionKey = socketChannel.register(selector, SelectionKey.OP_READ, peer);
+      selectionKey.interestOpsOr(SelectionKey.OP_WRITE);
       messageFactory.buildInterested(peer).send(socketChannel);
       peer.interested();
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      log.error("Exception occurred while starting IO for Peer {}", peer, e);
+      if(null != selectionKey){
+        selectionKey.cancel();
+      }
     }
   }
 

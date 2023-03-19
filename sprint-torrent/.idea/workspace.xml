@@ -6,6 +6,16 @@
   <component name="ChangeListManager">
     <list default="true" id="ff61bee9-25dd-4308-890d-84bfee837696" name="Changes" comment="Fix handshake timeout logic">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/content/impl/ContentManagerRandomAccessFileImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/content/impl/ContentManagerRandomAccessFileImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Torrent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Torrent.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioHandshakeHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioHandshakeHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/PeerNioIOHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/PeerNioIOHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersCollector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersCollector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/AvailablePiece.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/AvailablePiece.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/PieceDownloadScheduler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/PieceDownloadScheduler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/PieceDownloadSchedulerImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/PieceDownloadSchedulerImpl.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -197,7 +207,14 @@
       <option name="project" value="LOCAL" />
       <updated>1679156087437</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="Fix handshake timeout logic">
+      <created>1679156157794</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1679156157794</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -244,11 +261,6 @@
           <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/http/TrackerRequestBuilder.java</url>
           <line>84</line>
           <option name="timeStamp" value="33" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/PieceDownloadSchedulerImpl.java</url>
-          <line>113</line>
-          <option name="timeStamp" value="69" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

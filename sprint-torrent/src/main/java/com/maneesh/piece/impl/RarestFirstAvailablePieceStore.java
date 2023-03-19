@@ -40,7 +40,7 @@ public class RarestFirstAvailablePieceStore implements AvailablePieceStore {
 
   @Override
   public void removePeer(Peer peer) {
-    availablePieces.values().forEach(availablePiece -> availablePiece.getPeers().remove(peer));
+    availablePieces.values().forEach(availablePiece -> availablePiece.removePeer(peer));
   }
 
   @Override

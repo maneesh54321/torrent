@@ -33,7 +33,7 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
   private final ScheduledFuture<?> pollConnections;
   private final ByteBuffer handshakeMessage;
 
-  public NioHandshakeHandler(Clock clock, Torrent torrent) {
+  public NioHandshakeHandler(Torrent torrent, Clock clock) {
     try {
       selector = Selector.open();
     } catch (IOException e) {
@@ -54,10 +54,15 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
   }
 
   private void pollConnectedPeers() {
-    // check for handshake
-    checkHandshake();
-    // cancel handshake timed out connections
-    cancelTimedOutConnections();
+    try {
+      // check for handshake
+      checkHandshake();
+      // cancel handshake timed out connections
+      cancelTimedOutConnections();
+    } catch (Exception e) {
+      log.error("Error occurred while polling for handshake!!!", e);
+      torrent.shutdown();
+    }
   }
 
   private void cancelTimedOutConnections() {
@@ -65,49 +70,46 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
       HandshakeState handshakeState = (HandshakeState) selectionKey.attachment();
       if (Duration.between(clock.instant().minusSeconds(HANDSHAKE_TIMEOUT_SECONDS),
           handshakeState.getHandshakeStartedAt()).isNegative()) {
-        log.warn("Did not receive handshake from peer {} within {} seconds",
+        log.warn(
+            "Did not receive handshake from peer {} within {} seconds, dropping the connection",
             handshakeState.getPeer(), HANDSHAKE_TIMEOUT_SECONDS);
         selectionKey.cancel();
       }
     }
   }
 
-  private void checkHandshake() {
-    try {
-      selector.selectNow();
-      Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
-      while (keys.hasNext()) {
-        SelectionKey selectionKey = keys.next();
-        SocketChannel socket = (SocketChannel) selectionKey.channel();
-        HandshakeState handshakeState = (HandshakeState) selectionKey.attachment();
-        try {
-          // read the message from socket and verify if it is a handshake.
-          ByteBuffer messageBuffer = handshakeState.getMessageBuffer();
-          socket.read(messageBuffer);
-          if (!messageBuffer.hasRemaining()) {
-            // validate message if it is handshake
-            validateHandshake(messageBuffer.flip(), torrent.getTorrentMetadata().getInfo()
-                .getInfoHash());
-            // promote connection to start downloading/uploading
-            onHandshakeReceived(socket, handshakeState);
-            selectionKey.cancel();
-          }
-        } catch (Exception e) {
-          log.warn("Handshake failed with peer {}!!", handshakeState.getPeer(), e);
-          // cancel the registration
+  private void checkHandshake() throws IOException {
+    selector.selectNow();
+    Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
+    while (keys.hasNext()) {
+      SelectionKey selectionKey = keys.next();
+      SocketChannel socket = (SocketChannel) selectionKey.channel();
+      HandshakeState handshakeState = (HandshakeState) selectionKey.attachment();
+      try {
+        // read the message from socket and verify if it is a handshake.
+        ByteBuffer messageBuffer = handshakeState.getMessageBuffer();
+        socket.read(messageBuffer);
+        if (!messageBuffer.hasRemaining()) {
+          // validate message if it is handshake
+          validateHandshake(messageBuffer.flip(), torrent.getTorrentMetadata().getInfo()
+              .getInfoHash());
+          // promote connection to start downloading/uploading
+          onHandshakeReceived(socket, handshakeState);
           selectionKey.cancel();
-          try {
-            // close the socket
-            socket.close();
-          } catch (IOException ex) {
-            log.error("Failed to close the socket!!! Fix this...");
-          }
-        } finally {
-          keys.remove();
         }
+      } catch (Exception e) {
+        log.warn("Handshake failed with peer {}!!", handshakeState.getPeer(), e);
+        // cancel the registration
+        selectionKey.cancel();
+        try {
+          // close the socket
+          socket.close();
+        } catch (IOException ex) {
+          log.error("Failed to close the socket!!! Fix this...");
+        }
+      } finally {
+        keys.remove();
       }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
     }
   }
 
@@ -144,14 +146,18 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
 
   @Override
   public void onConnectionEstablished(SocketChannel socketChannel, Peer peer) {
+    HandshakeState handshakeState = new HandshakeState(peer);
+    handshakeState.setHandshakeStartedAt(clock.instant());
+    SelectionKey selectionKey = null;
     try {
-      HandshakeState handshakeState = new HandshakeState(peer);
-      socketChannel.register(selector, SelectionKey.OP_READ, handshakeState);
+      selectionKey = socketChannel.register(selector, SelectionKey.OP_READ, handshakeState);
       log.debug("Initiating handshake with peer {}", peer);
       sendHandshake(socketChannel);
-      handshakeState.setHandshakeStartedAt(clock.instant());
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      log.warn("Exception occurred while starting handshake process for peer {}",peer, e);
+      if (null != selectionKey) {
+        selectionKey.cancel();
+      }
     }
   }
 

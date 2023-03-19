@@ -3,7 +3,6 @@ package com.maneesh.content.impl;
 import com.maneesh.content.ContentManager;
 import com.maneesh.content.DownloadedBlock;
 import com.maneesh.content.common.Constants;
-import com.maneesh.core.Torrent;
 import com.maneesh.meta.Content;
 import com.maneesh.meta.DownloadFile;
 import com.maneesh.meta.Info;
@@ -29,9 +28,9 @@ public class ContentManagerRandomAccessFileImpl implements ContentManager {
 
   private final ExecutorService executorService;
 
-  public ContentManagerRandomAccessFileImpl(Torrent torrent) throws IOException {
-    this.info = torrent.getTorrentMetadata().getInfo();
-    this.executorService = torrent.getScheduledExecutorService();
+  public ContentManagerRandomAccessFileImpl(ExecutorService executorService, Info info) throws IOException {
+    this.info = info;
+    this.executorService = executorService;
     Content content = info.getContent();
 
     DownloadFile[] downloadFiles = content.downloadFiles();
@@ -50,9 +49,9 @@ public class ContentManagerRandomAccessFileImpl implements ContentManager {
           Files.createDirectory(rootDirectory);
         }
         int j = 0;
-        String path = "";
+        StringBuilder path = new StringBuilder();
         while (j < downloadFile.getPath().size() - 1) {
-          path += "/" + downloadFile.getPath().get(j);
+          path.append("/").append(downloadFile.getPath().get(j));
           Path filePath = Path.of(
               Constants.DOWNLOAD_ROOT_LOCATION + content.rootDirectoryName() + path);
           if(!Files.exists(filePath)){

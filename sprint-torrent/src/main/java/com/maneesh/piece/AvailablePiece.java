@@ -31,4 +31,12 @@ public class AvailablePiece {
   public List<Peer> getPeers() {
     return peers;
   }
+
+  @Override
+  public String toString() {
+    return "AvailablePiece{" +
+        "pieceIndex=" + pieceIndex +
+        ", peers=" + peers +
+        '}';
+  }
 }

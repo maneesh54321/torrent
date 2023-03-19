@@ -14,6 +14,7 @@ import java.nio.channels.SocketChannel;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -46,10 +47,15 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
   }
 
   private void pollPeerConnections() {
-    updateReadyConnections();
-    cancelTimedOutConnections();
-    // TODO enqueue failed peer connection again to peers queue to be tried again later
-    enqueueNewConnections();
+    try {
+      updateReadyConnections();
+      cancelTimedOutConnections();
+      // TODO enqueue failed peer connection again to peers queue to be tried again later
+      enqueueNewConnections();
+    } catch (Exception e) {
+      log.error("Error occurred updating queued connections!!", e);
+      torrent.shutdown();
+    }
   }
 
   private void cancelTimedOutConnections() {
@@ -62,53 +68,60 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
     }
   }
 
-  private void updateReadyConnections() {
-    try {
-      connected.select(selectionKey -> {
-        try {
-          PeerConnectionState peerConnectionState = (PeerConnectionState) selectionKey.attachment();
-          SocketChannel socket = (SocketChannel) selectionKey.channel();
-          if (socket.finishConnect()) {
-            onConnectionEstablished(socket, peerConnectionState.getPeer());
-            selectionKey.cancel();
-          }
-        } catch (IOException e) {
-          log.warn("Failed to connect to peer!!", e);
+  private void updateReadyConnections() throws IOException {
+    connected.selectNow();
+    for (SelectionKey selectionKey : connected.selectedKeys()) {
+      PeerConnectionState peerConnectionState = (PeerConnectionState) selectionKey.attachment();
+      SocketChannel socket = (SocketChannel) selectionKey.channel();
+      try {
+        if (socket.finishConnect()) {
+          onConnectionEstablished(socket, peerConnectionState.getPeer());
           selectionKey.cancel();
         }
-      }, 3000);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+      } catch (IOException e) {
+        log.warn("Failed to connect to peer!!", e);
+        selectionKey.cancel();
+      }
     }
   }
 
   private void enqueueNewConnections() {
     PeerIOHandler peerIOHandler = torrent.getPeerIOHandler();
-    while (peerIOHandler.getTotalActiveConnections() < maxConcurrentConnections
-        && !peersQueue.isEmpty()) {
-      Peer peer = peersQueue.poll();
-      PeerConnectionState peerConnectionState = new PeerConnectionState(peer);
-      try {
-        SocketChannel socketChannel = SocketChannel.open();
-        socketChannel.configureBlocking(false);
+    while (requireMoreConnections(peerIOHandler) && !peersQueue.isEmpty()) {
+      log.debug("total active connections : {}, connections in progress: {}. Enqueuing more peers..",
+          peerIOHandler.getTotalActiveConnections(), connected.keys().size());
+      Optional<Peer> maybePeer = Optional.ofNullable(peersQueue.poll());
+      if(maybePeer.isPresent()){
+        Peer peer = maybePeer.get();
+        PeerConnectionState peerConnectionState = new PeerConnectionState(peer);
         try {
-          socketChannel.register(connected, SelectionKey.OP_CONNECT, peerConnectionState);
-          socketChannel.connect(peer.getSocketAddress());
-          peerConnectionState.setStartedAt(clock.instant());
-        } catch (ClosedChannelException e) {
-          log.warn("Failed to establish connection with peer {}", peer, e);
-        } catch (Exception e) {
-          log.warn("Exception occurred while adding new connection", e);
+          SocketChannel socketChannel = SocketChannel.open();
+          socketChannel.configureBlocking(false);
           try {
-            socketChannel.close();
-          } catch (IOException ex) {
-            log.error("Failed to close open channel!!! Fix this...");
+            socketChannel.register(connected, SelectionKey.OP_CONNECT, peerConnectionState);
+            socketChannel.connect(peer.getSocketAddress());
+            peerConnectionState.setStartedAt(clock.instant());
+          } catch (ClosedChannelException e) {
+            log.warn("Failed to establish connection with peer {}", maybePeer, e);
+          } catch (Exception e) {
+            log.warn("Exception occurred while adding new connection", e);
+            try {
+              socketChannel.close();
+            } catch (IOException ex) {
+              log.error("Failed to close open channel!!! Fix this...");
+            }
           }
+        } catch (IOException e) {
+          log.warn("Failed to create socket for peer {}", maybePeer);
         }
-      } catch (IOException e) {
-        log.warn("Failed to create socket for peer {}", peer);
       }
     }
+  }
+
+  private boolean requireMoreConnections(PeerIOHandler peerIOHandler) {
+    int connectionsInProgress = connected.keys().size();
+    int activeConnections = peerIOHandler.getTotalActiveConnections();
+    return (connectionsInProgress + activeConnections) < maxConcurrentConnections;
   }
 
   @Override

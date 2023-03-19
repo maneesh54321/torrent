@@ -4,7 +4,7 @@ import com.maneesh.content.ContentManager;
 import com.maneesh.content.DownloadedBlock;
 import com.maneesh.core.LongRunningProcess;
 import com.maneesh.core.Peer;
-import com.maneesh.core.Torrent;
+import com.maneesh.meta.Info;
 import com.maneesh.network.message.BlockRequestMessage;
 import com.maneesh.network.message.IMessage;
 import com.maneesh.piece.AvailablePiece;
@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
@@ -26,7 +27,7 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
   private static final Logger log = LoggerFactory.getLogger(PieceDownloadSchedulerImpl.class);
 
   private static final int DEFAULT_BLOCK_SIZE = 1 << 14;
-  private final Torrent torrent;
+  private final Info info;
   private final AvailablePieceStore availablePieceStore;
   private final ScheduledFuture<?> scheduledDownloadTask;
   private final Queue<IMessage> pendingBlockRequests;
@@ -36,13 +37,13 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
   private AvailablePiece currentlyDownloadingPiece;
   private final ContentManager contentManager;
 
-  public PieceDownloadSchedulerImpl(Torrent torrent, AvailablePieceStore availablePieceStore) {
-    this.torrent = torrent;
-    this.contentManager = torrent.getContentManager();
+  public PieceDownloadSchedulerImpl(ScheduledExecutorService executorService, Info info, ContentManager contentManager, AvailablePieceStore availablePieceStore) {
+    this.info = info;
+    this.contentManager = contentManager;
     this.availablePieceStore = availablePieceStore;
     this.downloading = false;
     this.pendingBlockRequests = new ArrayDeque<>();
-    this.scheduledDownloadTask = torrent.getScheduledExecutorService()
+    this.scheduledDownloadTask = executorService
         .scheduleAtFixedRate(this::downloadPriorityPiece, 50, 50, TimeUnit.MILLISECONDS);
   }
 
@@ -50,6 +51,7 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
     try{
       if (!downloading) {
         this.availablePieceStore.highestPriorityPiece().ifPresent(availablePiece -> {
+          log.debug("Highest priority piece: {}", availablePiece);
           currentlyDownloadingPiece = availablePiece;
           downloading = true;
           pendingBlockRequests.addAll(createBlockRequests(availablePiece));
@@ -65,26 +67,34 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
 
   private void distributeBlocksToPeers(AvailablePiece availablePiece) {
     // assign blocks to peers if pendingBlockRequests queue is not empty
-    Iterator<Peer> peerIterator = availablePiece.getPeers().iterator();
-    while (!pendingBlockRequests.isEmpty() && peerIterator.hasNext()) {
-      Peer peer = peerIterator.next();
-      if (peer.canDownload()) {
-        peer.addMessage(pendingBlockRequests.poll());
-      }
-      if (pendingBlockRequests.isEmpty()) {
-        break;
-      }
-      if (!peerIterator.hasNext()) {
-        peerIterator = availablePiece.getPeers().iterator();
+    if(!pendingBlockRequests.isEmpty()){
+      Iterator<Peer> peerIterator = availablePiece.getPeers().iterator();
+      while (!pendingBlockRequests.isEmpty() && peerIterator.hasNext()) {
+        log.debug("Distributing block requests to peers for piece: {}", availablePiece);
+        Peer peer = peerIterator.next();
+        if (peer.canDownload()) {
+          peer.addMessage(pendingBlockRequests.poll());
+        }
+        if (pendingBlockRequests.isEmpty()) {
+          break;
+        }
+        if (!peerIterator.hasNext()) {
+          peerIterator = availablePiece.getPeers().iterator();
+        }
       }
     }
   }
 
+  /**
+   * Splits the available pieces into block download requests according to Bit torrent protocol.
+   * @param availablePiece The piece to be split into block requests
+   * @return List of Block Request Messages which can be sent to peers.
+   */
   private List<IMessage> createBlockRequests(AvailablePiece availablePiece) {
     // Calculate piece length
-    long totalSize = torrent.getTorrentMetadata().getInfo().getTotalSizeInBytes();
-    long pieceLength = torrent.getTorrentMetadata().getInfo().getPieceLength();
-    int totalPieces = torrent.getTorrentMetadata().getInfo().getInfoHash().length / 20;
+    long totalSize = info.getTotalSizeInBytes();
+    long pieceLength = info.getPieceLength();
+    int totalPieces = info.getInfoHash().length / 20;
     long availablePieceLength = (availablePiece.getPieceIndex() == totalPieces - 1) ?
         pieceLength : totalSize % pieceLength;
     // Create Blocks Request messages based on complete piece length and block size
@@ -120,7 +130,11 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
   }
 
   @Override
-  public void failBlocksDownload(Collection<IMessage> messages) {
+  public void failBlocksDownload(Collection<IMessage> messages, Peer peer) {
+    log.debug("{} Returning {} block requests to PieceDownloadScheduler", peer, messages.size());
+    // remove from available piece store as peer is not connected anymore
+    availablePieceStore.removePeer(peer);
+    // queue the blocks which could not be downloaded because peer disconnected
     pendingBlockRequests.addAll(messages);
   }
 

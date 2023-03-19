@@ -44,26 +44,31 @@ public class TorrentPeersCollector implements LongRunningProcess {
   }
 
   private void collectPeers() {
-    // collect peers
-    for (String announceUrl : torrent.getTorrentMetadata().getAnnounceList()) {
-      Optional<TrackerResponse> maybeTrackerResponse = Optional.empty();
-      log.debug("Trying tracker: {}", announceUrl);
-      if (isHttpTracker.test(announceUrl)) {
-        maybeTrackerResponse = httpTrackerClient.requestPeers(announceUrl, torrent);
-      } else if (isUDPTracker.test(announceUrl)) {
-        maybeTrackerResponse = udpTrackerClient.requestPeers(announceUrl, torrent);
-      }
-      if (maybeTrackerResponse.isPresent()) {
-        TrackerResponse trackerResponse = maybeTrackerResponse.get();
-        trackerResponse.getPeersAddresses().ifPresent(this.peersStore::refreshPeers);
+    try {
+      // collect peers
+      for (String announceUrl : torrent.getTorrentMetadata().getAnnounceList()) {
+        Optional<TrackerResponse> maybeTrackerResponse = Optional.empty();
+        log.debug("Trying tracker: {}", announceUrl);
+        if (isHttpTracker.test(announceUrl)) {
+          maybeTrackerResponse = httpTrackerClient.requestPeers(announceUrl, torrent);
+        } else if (isUDPTracker.test(announceUrl)) {
+          maybeTrackerResponse = udpTrackerClient.requestPeers(announceUrl, torrent);
+        }
+        if (maybeTrackerResponse.isPresent()) {
+          TrackerResponse trackerResponse = maybeTrackerResponse.get();
+          trackerResponse.getPeersAddresses().ifPresent(this.peersStore::refreshPeers);
 
-        // schedule the next peer collection
-        collectionTaskFuture = torrent.getScheduledExecutorService()
-            .schedule(peersCollectionTask, trackerResponse.getInterval(), TimeUnit.SECONDS);
-        return;
+          // schedule the next peer collection
+          collectionTaskFuture = torrent.getScheduledExecutorService()
+              .schedule(peersCollectionTask, trackerResponse.getInterval(), TimeUnit.SECONDS);
+          return;
+        }
       }
+      throw new RuntimeException("Failed to fetch peers from tracker!!");
+    } catch (Exception e) {
+      log.error("Error occurred while fetching peers!!", e);
+      torrent.shutdown();
     }
-    throw new RuntimeException("Failed to fetch peers from tracker!!");
   }
 
   @Override
