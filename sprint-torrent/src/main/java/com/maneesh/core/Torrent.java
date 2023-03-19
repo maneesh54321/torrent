@@ -65,7 +65,7 @@ public class Torrent {
     peersQueue = new TorrentPeersSwarm(messageFactory, pieceDownloadScheduler, clock);
     connectionHandler = new NioConnectionHandler(30, this, clock);
     handshakeHandler = new NioHandshakeHandler(this, clock, peersQueue);
-    peerIOHandler = new PeerNioIOHandler(this, messageFactory);
+    peerIOHandler = new PeerNioIOHandler(this, messageFactory, clock);
     peersCollector = new TorrentPeersCollector(this);
   }
 

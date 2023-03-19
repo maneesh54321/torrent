@@ -6,20 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="ff61bee9-25dd-4308-890d-84bfee837696" name="Changes" comment="Fix download. Fix few bugs.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/content/impl/ContentManagerRandomAccessFileImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/content/impl/ContentManagerRandomAccessFileImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Peer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Peer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Torrent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Torrent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioHandshakeHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioHandshakeHandler.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/PeerNioIOHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/PeerNioIOHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BlockRequestMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BlockRequestMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersSwarm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersSwarm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/AvailablePiece.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/AvailablePiece.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/AvailablePieceStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/AvailablePieceStore.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/PieceDownloadSchedulerImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/PieceDownloadSchedulerImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/RarestFirstAvailablePieceStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/RarestFirstAvailablePieceStore.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/logback.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/logback.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/KeepAliveMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/KeepAliveMessage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/MessageFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/MessageFactory.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,8 +42,8 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Enum" />
-        <option value="Class" />
         <option value="Interface" />
+        <option value="Class" />
       </list>
     </option>
   </component>
@@ -232,7 +222,14 @@
       <option name="project" value="LOCAL" />
       <updated>1679209809686</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="Fix download. Fix few bugs.">
+      <created>1679244790382</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1679244790382</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

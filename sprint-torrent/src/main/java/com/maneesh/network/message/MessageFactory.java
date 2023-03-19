@@ -81,4 +81,8 @@ public class MessageFactory {
     return new InterestedMessage(peer);
   }
 
+  public IMessage buildKeepAlive() {
+    return new KeepAliveMessage();
+  }
+
 }

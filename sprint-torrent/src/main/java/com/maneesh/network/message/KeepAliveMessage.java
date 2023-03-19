@@ -1,13 +1,19 @@
 package com.maneesh.network.message;
 
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 
 public class KeepAliveMessage extends NioSocketMessage {
 
+  private static final ByteBuffer buffer = ByteBuffer.allocate(4);
+
+  static {
+    buffer.putInt(0);
+  }
+
   @Override
   protected ByteBuffer convertToBytes() {
-    return null;
+    buffer.position(0);
+    return buffer;
   }
 
   @Override
