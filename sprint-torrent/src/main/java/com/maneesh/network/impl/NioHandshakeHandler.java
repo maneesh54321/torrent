@@ -85,7 +85,9 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
 
   private void cancelPeerConnection(SelectionKey selectionKey) {
     if (null != selectionKey) {
-      peersQueue.offer(getHandshakeStateFromKey(selectionKey).getPeer());
+      Peer peer = getHandshakeStateFromKey(selectionKey).getPeer();
+      peer.setLastActive();
+      peersQueue.offer(peer);
       selectionKey.cancel();
       SelectableChannel socket = selectionKey.channel();
       try {
@@ -105,6 +107,7 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
     Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
     while (keys.hasNext()) {
       SelectionKey selectionKey = keys.next();
+      keys.remove();
       SocketChannel socket = (SocketChannel) selectionKey.channel();
       HandshakeState handshakeState = getHandshakeStateFromKey(selectionKey);
       try {
@@ -129,8 +132,6 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
         } catch (IOException ex) {
           log.error("Failed to close the socket!!! Fix this...");
         }
-      } finally {
-        keys.remove();
       }
     }
   }

@@ -2,14 +2,16 @@ package com.maneesh.core;
 
 import com.maneesh.content.DownloadedBlock;
 import com.maneesh.network.exception.BitTorrentProtocolViolationException;
+import com.maneesh.network.message.BlockRequestMessage;
 import com.maneesh.network.message.IMessage;
 import com.maneesh.network.message.MessageFactory;
-import com.maneesh.network.message.PieceMessage;
 import com.maneesh.piece.PieceDownloadScheduler;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,12 +31,14 @@ public class Peer {
 
   private final MessageFactory messageFactory;
   private final PieceDownloadScheduler pieceDownloadScheduler;
+  private final Clock clock;
   private ByteBuffer buffer;
+  private Instant lastActive;
   private boolean choked;
   private boolean am_interested;
 
   public Peer(SocketAddress socketAddress, MessageFactory messageFactory,
-      PieceDownloadScheduler pieceDownloadScheduler) {
+      PieceDownloadScheduler pieceDownloadScheduler, Clock clock) {
     this.socketAddress = socketAddress;
     this.messageFactory = messageFactory;
     this.pieceDownloadScheduler = pieceDownloadScheduler;
@@ -44,6 +48,7 @@ public class Peer {
     buffer.limit(LENGTH_BUFFER_SIZE);
     choked = true;
     am_interested = false;
+    this.clock = clock;
   }
 
   public boolean canRead(SocketChannel socket) throws IOException {
@@ -137,7 +142,19 @@ public class Peer {
   }
 
   public boolean canDownload() {
-    return am_interested && choked;
+    return am_interested && !choked;
+  }
+
+  public void setLastActive() {
+    this.lastActive = clock.instant();
+  }
+
+  public void setLastActive(Instant instant) {
+    this.lastActive = instant;
+  }
+
+  public Instant getLastActive() {
+    return lastActive;
   }
 
   @Override
@@ -167,8 +184,8 @@ public class Peer {
   public void completeBlockDownload(DownloadedBlock downloadedBlock) {
     // mark this block as completed by this peer.
     inProgress.removeIf(
-        (message) -> message.equals(new PieceMessage(null, downloadedBlock.pieceIndex(),
-            downloadedBlock.offset(), null)));
+        message -> message.equals(new BlockRequestMessage(downloadedBlock.pieceIndex(),
+            downloadedBlock.offset(), downloadedBlock.data().length)));
     pieceDownloadScheduler.completeBlockDownload(downloadedBlock);
   }
 }

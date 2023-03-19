@@ -53,6 +53,7 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
       Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
       while (keys.hasNext()) {
         SelectionKey selectionKey = keys.next();
+        keys.remove();
         SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
         Peer peer = getPeerFromKey(selectionKey);
         try {
@@ -70,7 +71,6 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
           pieceDownloadScheduler.failBlocksDownload(peer.drainInProgress(), peer);
           cancelPeerConnection(selectionKey);
         }
-        keys.remove();
       }
     } catch (Exception e) {
       log.error("Error occurred while handling I/O", e);
@@ -109,7 +109,9 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
   private void cancelPeerConnection(SelectionKey selectionKey) {
     log.warn("Closing peer connection and returning peer to store for retry...");
     if (null != selectionKey) {
-      peersQueue.offer(getPeerFromKey(selectionKey));
+      Peer peer = getPeerFromKey(selectionKey);
+      peer.setLastActive();
+      peersQueue.offer(peer);
       selectionKey.cancel();
       SelectableChannel socket = selectionKey.channel();
       try {

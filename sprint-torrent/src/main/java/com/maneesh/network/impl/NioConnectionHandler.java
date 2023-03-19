@@ -16,6 +16,7 @@ import java.nio.channels.SocketChannel;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -30,9 +31,7 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
   private final ScheduledFuture<?> pollingConnectorTask;
   private final PeersQueue peersQueue;
   private final Selector connected;
-
   private final Torrent torrent;
-
   private final Clock clock;
 
   public NioConnectionHandler(int maxConcurrentConnections, Torrent torrent, Clock clock)
@@ -71,7 +70,10 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
 
   private void updateReadyConnections() throws IOException {
     connected.selectNow();
-    for (SelectionKey selectionKey : connected.selectedKeys()) {
+    Iterator<SelectionKey> keys = connected.selectedKeys().iterator();
+    while (keys.hasNext()) {
+      SelectionKey selectionKey = keys.next();
+      keys.remove();
       PeerConnectionState peerConnectionState = getPeerConnectionStateFromKey(selectionKey);
       SocketChannel socket = (SocketChannel) selectionKey.channel();
       try {
@@ -89,31 +91,34 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
   private void enqueueNewConnections() {
     PeerIOHandler peerIOHandler = torrent.getPeerIOHandler();
     while (requireMoreConnections(peerIOHandler) && !peersQueue.isEmpty()) {
-      log.debug("total active connections : {}, connections in progress: {}. Enqueuing more peers..",
+      log.info(
+          "total active connections : {}, connections in progress: {}. Enqueuing more peers..",
           peerIOHandler.getTotalActiveConnections(), connected.keys().size());
       Optional<Peer> maybePeer = Optional.ofNullable(peersQueue.poll());
-      if(maybePeer.isPresent()){
+      if (maybePeer.isPresent()) {
         Peer peer = maybePeer.get();
-        PeerConnectionState peerConnectionState = new PeerConnectionState(peer);
-        try {
-          SocketChannel socketChannel = SocketChannel.open();
-          socketChannel.configureBlocking(false);
+        if (Duration.between(Instant.now(), peer.getLastActive().plusSeconds(120)).isNegative()) {
+          PeerConnectionState peerConnectionState = new PeerConnectionState(peer);
           try {
-            socketChannel.register(connected, SelectionKey.OP_CONNECT, peerConnectionState);
-            socketChannel.connect(peer.getSocketAddress());
-            peerConnectionState.setStartedAt(clock.instant());
-          } catch (ClosedChannelException e) {
-            log.warn("Failed to establish connection with peer {}", maybePeer, e);
-          } catch (Exception e) {
-            log.warn("Exception occurred while adding new connection", e);
+            SocketChannel socketChannel = SocketChannel.open();
+            socketChannel.configureBlocking(false);
             try {
-              socketChannel.close();
-            } catch (IOException ex) {
-              log.error("Failed to close open channel!!! Fix this...");
+              socketChannel.register(connected, SelectionKey.OP_CONNECT, peerConnectionState);
+              socketChannel.connect(peer.getSocketAddress());
+              peerConnectionState.setStartedAt(clock.instant());
+            } catch (ClosedChannelException e) {
+              log.warn("Failed to establish connection with peer {}", maybePeer, e);
+            } catch (Exception e) {
+              log.warn("Exception occurred while adding new connection", e);
+              try {
+                socketChannel.close();
+              } catch (IOException ex) {
+                log.error("Failed to close open channel!!! Fix this...");
+              }
             }
+          } catch (IOException e) {
+            log.warn("Failed to create socket for peer {}", maybePeer);
           }
-        } catch (IOException e) {
-          log.warn("Failed to create socket for peer {}", maybePeer);
         }
       }
     }
@@ -127,7 +132,9 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
 
   private void cancelPeerConnection(SelectionKey selectionKey) {
     if (null != selectionKey) {
-      peersQueue.offer(getPeerConnectionStateFromKey(selectionKey).getPeer());
+      Peer peer = getPeerConnectionStateFromKey(selectionKey).getPeer();
+      peer.setLastActive();
+      peersQueue.offer(peer);
       selectionKey.cancel();
       SelectableChannel socket = selectionKey.channel();
       try {

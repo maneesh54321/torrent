@@ -4,17 +4,22 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ff61bee9-25dd-4308-890d-84bfee837696" name="Changes" comment="Improve exception handling. Improve client shutdown. Refactoring">
+    <list default="true" id="ff61bee9-25dd-4308-890d-84bfee837696" name="Changes" comment="Fix download. Fix few bugs.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/content/impl/ContentManagerRandomAccessFileImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/content/impl/ContentManagerRandomAccessFileImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Peer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Peer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Torrent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Torrent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/exception/HandshakeTimeoutException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioHandshakeHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioHandshakeHandler.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/PeerNioIOHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/PeerNioIOHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/ChokeMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/ChokeMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/IMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/IMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/MessageFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/MessageFactory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/PieceMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/PieceMessage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BlockRequestMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BlockRequestMessage.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersSwarm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersSwarm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/AvailablePiece.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/AvailablePiece.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/AvailablePieceStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/AvailablePieceStore.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/PieceDownloadSchedulerImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/PieceDownloadSchedulerImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/RarestFirstAvailablePieceStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/RarestFirstAvailablePieceStore.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/logback.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/logback.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,8 +52,8 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Enum" />
-        <option value="Interface" />
         <option value="Class" />
+        <option value="Interface" />
       </list>
     </option>
   </component>
@@ -220,7 +225,14 @@
       <option name="project" value="LOCAL" />
       <updated>1679196370086</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="handle choking of connections, Return failed connection to PeersQueue to be retried.">
+      <created>1679209809686</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1679209809686</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -244,7 +256,9 @@
     <MESSAGE value="Add connection timeout in NioConnectionHandler&#10;- Fix AvailablePiece immutable peers collection" />
     <MESSAGE value="Fix handshake timeout logic" />
     <MESSAGE value="Improve exception handling. Improve client shutdown. Refactoring" />
-    <option name="LAST_COMMIT_MESSAGE" value="Improve exception handling. Improve client shutdown. Refactoring" />
+    <MESSAGE value="handle choking of connections, Return failed connection to PeersQueue to be retried." />
+    <MESSAGE value="Fix download. Fix few bugs." />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix download. Fix few bugs." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -270,9 +284,9 @@
           <option name="timeStamp" value="33" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/core/Peer.java</url>
-          <line>116</line>
-          <option name="timeStamp" value="35" />
+          <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/network/message/PieceMessage.java</url>
+          <line>35</line>
+          <option name="timeStamp" value="46" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

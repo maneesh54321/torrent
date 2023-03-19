@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.PriorityQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class RarestFirstAvailablePieceStore implements AvailablePieceStore {
 
@@ -15,22 +16,34 @@ public class RarestFirstAvailablePieceStore implements AvailablePieceStore {
 
   private final Map<Integer, AvailablePiece> availablePieces;
 
-  public RarestFirstAvailablePieceStore() {
+  private final boolean[] pieceDownloadStatus;
+
+  private final AtomicInteger downloadedPieceCount;
+
+  public RarestFirstAvailablePieceStore(int totalPieces) {
     Comparator<AvailablePiece> comparator = Comparator.comparingInt(
         availablePiece -> availablePiece.getPeers().size());
+    this.pieceDownloadStatus = new boolean[totalPieces];
     this.store = new PriorityQueue<>(comparator);
     this.availablePieces = new HashMap<>();
+    this.downloadedPieceCount = new AtomicInteger(0);
   }
 
   @Override
-  public void addAvailablePiece(int pieceIndex, Peer peer) {
-    if (availablePieces.containsKey(pieceIndex)) {
-      availablePieces.get(pieceIndex).addPeer(peer);
-    } else {
-      AvailablePiece availablePiece = new AvailablePiece(pieceIndex, peer);
-      availablePieces.put(pieceIndex, availablePiece);
-      store.add(availablePiece);
+  public synchronized void addAvailablePiece(int pieceIndex, Peer peer) {
+    if(pieceIndex < pieceDownloadStatus.length && !isPieceDownloaded(pieceIndex)){
+      if (availablePieces.containsKey(pieceIndex)) {
+        availablePieces.get(pieceIndex).addPeer(peer);
+      } else {
+        AvailablePiece availablePiece = new AvailablePiece(pieceIndex, peer);
+        availablePieces.put(pieceIndex, availablePiece);
+        store.add(availablePiece);
+      }
     }
+  }
+
+  private boolean isPieceDownloaded(int pieceIndex) {
+    return pieceDownloadStatus[pieceIndex];
   }
 
   @Override
@@ -39,12 +52,18 @@ public class RarestFirstAvailablePieceStore implements AvailablePieceStore {
   }
 
   @Override
-  public void removePeer(Peer peer) {
+  public synchronized void removePeer(Peer peer) {
     availablePieces.values().forEach(availablePiece -> availablePiece.removePeer(peer));
   }
 
   @Override
-  public void removeHighestPriorityPiece() {
-    store.remove();
+  public synchronized void removeHighestPriorityPiece() {
+    pieceDownloadStatus[store.remove().getPieceIndex()] = true;
+    this.downloadedPieceCount.incrementAndGet();
+  }
+
+  @Override
+  public boolean isDownloadCompleted() {
+    return this.downloadedPieceCount.get() == pieceDownloadStatus.length;
   }
 }

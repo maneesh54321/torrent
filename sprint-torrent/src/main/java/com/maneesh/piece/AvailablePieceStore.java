@@ -7,8 +7,8 @@ public interface AvailablePieceStore {
 
   /**
    * Adds an available piece to be prioritized for download
-   * @param pieceIndex
-   * @param peer
+   * @param pieceIndex index of the piece which is available
+   * @param peer the peer which has the piece
    */
   void addAvailablePiece(int pieceIndex, Peer peer);
 
@@ -30,4 +30,6 @@ public interface AvailablePieceStore {
    * Removes the highest priority piece from store
    */
   void removeHighestPriorityPiece();
+
+  boolean isDownloadCompleted();
 }

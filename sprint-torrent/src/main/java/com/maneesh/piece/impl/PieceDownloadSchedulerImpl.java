@@ -4,6 +4,7 @@ import com.maneesh.content.ContentManager;
 import com.maneesh.content.DownloadedBlock;
 import com.maneesh.core.LongRunningProcess;
 import com.maneesh.core.Peer;
+import com.maneesh.core.Torrent;
 import com.maneesh.meta.Info;
 import com.maneesh.network.message.BlockRequestMessage;
 import com.maneesh.network.message.IMessage;
@@ -19,6 +20,9 @@ import java.util.Queue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,49 +35,66 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
   private final AvailablePieceStore availablePieceStore;
   private final ScheduledFuture<?> scheduledDownloadTask;
   private final Queue<IMessage> pendingBlockRequests;
-  private boolean downloading;
-  private int blocksDownloaded;
+  private final ContentManager contentManager;
+  private final Torrent torrent;
+  private final AtomicBoolean downloading;
+  private final AtomicInteger blocksDownloaded;
   private int totalBlocks;
   private AvailablePiece currentlyDownloadingPiece;
-  private final ContentManager contentManager;
 
-  public PieceDownloadSchedulerImpl(ScheduledExecutorService executorService, Info info, ContentManager contentManager, AvailablePieceStore availablePieceStore) {
+  private final ReentrantLock lock;
+
+
+  public PieceDownloadSchedulerImpl(Torrent torrent, ScheduledExecutorService executorService, Info info,
+      ContentManager contentManager, AvailablePieceStore availablePieceStore) {
     this.info = info;
     this.contentManager = contentManager;
+    this.torrent = torrent;
     this.availablePieceStore = availablePieceStore;
-    this.downloading = false;
+    this.downloading = new AtomicBoolean(false);
+    this.blocksDownloaded = new AtomicInteger(0);
+    this.lock = new ReentrantLock();
     this.pendingBlockRequests = new ArrayDeque<>();
     this.scheduledDownloadTask = executorService
         .scheduleAtFixedRate(this::downloadPriorityPiece, 50, 50, TimeUnit.MILLISECONDS);
   }
 
   private void downloadPriorityPiece() {
-    try{
-      if (!downloading) {
+    try {
+      lock.lock();
+      if (!downloading.get()) {
+        if(this.availablePieceStore.isDownloadCompleted()){
+          torrent.shutdown();
+        }
         this.availablePieceStore.highestPriorityPiece().ifPresent(availablePiece -> {
           log.debug("Highest priority piece: {}", availablePiece);
           currentlyDownloadingPiece = availablePiece;
-          downloading = true;
+          downloading.set(true);
+          blocksDownloaded.set(0);
           pendingBlockRequests.addAll(createBlockRequests(availablePiece));
         });
       }
-      if(currentlyDownloadingPiece != null){
+      if (currentlyDownloadingPiece != null) {
         distributeBlocksToPeers(currentlyDownloadingPiece);
       }
-    } catch (Exception e){
+    } catch (Exception e) {
       log.warn("Exception occurred while scheduling piece download!!", e);
+    } finally {
+      lock.unlock();
     }
   }
 
   private void distributeBlocksToPeers(AvailablePiece availablePiece) {
     // assign blocks to peers if pendingBlockRequests queue is not empty
-    if(!pendingBlockRequests.isEmpty()){
+    if (!pendingBlockRequests.isEmpty()) {
       Iterator<Peer> peerIterator = availablePiece.getPeers().iterator();
+      log.debug("Distributing block requests to peers for piece: {}", availablePiece);
       while (!pendingBlockRequests.isEmpty() && peerIterator.hasNext()) {
-        log.debug("Distributing block requests to peers for piece: {}", availablePiece);
         Peer peer = peerIterator.next();
         if (peer.canDownload()) {
-          peer.addMessage(pendingBlockRequests.poll());
+          IMessage blockRequest = pendingBlockRequests.poll();
+          peer.addMessage(blockRequest);
+          log.info("Block request {} assigned to {}", blockRequest, peer);
         }
         if (pendingBlockRequests.isEmpty()) {
           break;
@@ -87,6 +108,7 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
 
   /**
    * Splits the available pieces into block download requests according to Bit torrent protocol.
+   *
    * @param availablePiece The piece to be split into block requests
    * @return List of Block Request Messages which can be sent to peers.
    */
@@ -115,6 +137,8 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
       );
     }
     totalBlocks = blockRequests.size();
+    log.info("Total blocks created for piece index: {} = {}", availablePiece.getPieceIndex(),
+        totalBlocks);
     return blockRequests;
   }
 
@@ -123,9 +147,11 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
     // Write this piece block to disk and mark the block downloaded
     contentManager.writeToDiskAsync(downloadedBlock);
     // if complete piece is downloaded, set downloading = false
-    blocksDownloaded++;
-    if (blocksDownloaded == totalBlocks) {
-      downloading = false;
+
+    if (blocksDownloaded.incrementAndGet() == totalBlocks) {
+      log.info("Completed downloading all blocks of piece {}", currentlyDownloadingPiece);
+      downloading.set(false);
+      availablePieceStore.removeHighestPriorityPiece();
     }
   }
 

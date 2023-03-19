@@ -55,14 +55,14 @@ public class Torrent {
     left = 0;
     torrentMetadata = TorrentMetadata.parseTorrentFile(
         new FileInputStream(torrentFileAbsolutePath));
-    contentManager = new ContentManagerRandomAccessFileImpl(scheduledExecutorService,
-        torrentMetadata.getInfo());
     MessageFactory messageFactory = new MessageFactory(this);
     Clock clock = Clock.systemDefaultZone();
-    availablePieceStore = new RarestFirstAvailablePieceStore();
-    pieceDownloadScheduler = new PieceDownloadSchedulerImpl(scheduledExecutorService,
+    availablePieceStore = new RarestFirstAvailablePieceStore(torrentMetadata.getInfo().getTotalPieces());
+    contentManager = new ContentManagerRandomAccessFileImpl(this, scheduledExecutorService,
+        torrentMetadata.getInfo());
+    pieceDownloadScheduler = new PieceDownloadSchedulerImpl(this, scheduledExecutorService,
         torrentMetadata.getInfo(), contentManager, availablePieceStore);
-    peersQueue = new TorrentPeersSwarm(messageFactory, pieceDownloadScheduler);
+    peersQueue = new TorrentPeersSwarm(messageFactory, pieceDownloadScheduler, clock);
     connectionHandler = new NioConnectionHandler(30, this, clock);
     handshakeHandler = new NioHandshakeHandler(this, clock, peersQueue);
     peerIOHandler = new PeerNioIOHandler(this, messageFactory);

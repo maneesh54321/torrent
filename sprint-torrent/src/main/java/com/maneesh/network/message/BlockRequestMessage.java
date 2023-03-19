@@ -1,6 +1,7 @@
 package com.maneesh.network.message;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 public class BlockRequestMessage extends NioSocketMessage {
 
@@ -39,5 +40,22 @@ public class BlockRequestMessage extends NioSocketMessage {
         ", offset=" + offset +
         ", length=" + length +
         '}';
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    BlockRequestMessage that = (BlockRequestMessage) o;
+    return pieceIndex == that.pieceIndex && offset == that.offset && length == that.length;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(pieceIndex, offset, length);
   }
 }

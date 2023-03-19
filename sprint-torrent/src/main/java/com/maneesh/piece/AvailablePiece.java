@@ -1,8 +1,8 @@
 package com.maneesh.piece;
 
 import com.maneesh.core.Peer;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AvailablePiece {
   private final int pieceIndex;
@@ -11,7 +11,7 @@ public class AvailablePiece {
 
   public AvailablePiece(int pieceIndex, Peer peer) {
     this.pieceIndex = pieceIndex;
-    this.peers = new ArrayList<>();
+    this.peers = new CopyOnWriteArrayList<>();
     peers.add(peer);
   }
 

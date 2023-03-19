@@ -3,6 +3,7 @@ package com.maneesh.content.impl;
 import com.maneesh.content.ContentManager;
 import com.maneesh.content.DownloadedBlock;
 import com.maneesh.content.common.Constants;
+import com.maneesh.core.Torrent;
 import com.maneesh.meta.Content;
 import com.maneesh.meta.DownloadFile;
 import com.maneesh.meta.Info;
@@ -28,7 +29,10 @@ public class ContentManagerRandomAccessFileImpl implements ContentManager {
 
   private final ExecutorService executorService;
 
-  public ContentManagerRandomAccessFileImpl(ExecutorService executorService, Info info) throws IOException {
+  private final Torrent torrent;
+
+  public ContentManagerRandomAccessFileImpl(Torrent torrent, ExecutorService executorService, Info info) throws IOException {
+    this.torrent = torrent;
     this.info = info;
     this.executorService = executorService;
     Content content = info.getContent();
@@ -74,7 +78,7 @@ public class ContentManagerRandomAccessFileImpl implements ContentManager {
 
   @Override
   public void writeToDisk(DownloadedBlock downloadedBlock) throws IOException {
-    log.debug("Writing to disk: {}", downloadedBlock);
+    log.info("Writing to disk: {}", downloadedBlock);
 
     // search the file to which this block belongs
     int fileIndex = contentMode == ContentMode.SINGLE ? 0
@@ -97,7 +101,7 @@ public class ContentManagerRandomAccessFileImpl implements ContentManager {
         writeToDisk(downloadedBlock);
       } catch (IOException e) {
         log.error("Failed to write the downloaded block to disk!!");
-        throw new RuntimeException(e);
+        torrent.shutdown();
       }
     });
   }
