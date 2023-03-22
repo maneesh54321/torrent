@@ -54,7 +54,7 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
     this.handshakeMessage.put(torrent.getPeerId().getBytes());
 
     this.pollConnections = torrent.getScheduledExecutorService()
-        .scheduleAtFixedRate(this::pollConnectedPeers, 50, 50,
+        .scheduleWithFixedDelay(this::pollConnectedPeers, 50, 50,
             TimeUnit.MILLISECONDS);
   }
 
@@ -86,6 +86,7 @@ public class NioHandshakeHandler implements HandshakeHandler, LongRunningProcess
   private void cancelPeerConnection(SelectionKey selectionKey) {
     if (null != selectionKey) {
       Peer peer = getHandshakeStateFromKey(selectionKey).getPeer();
+      log.warn("Cancelling peer connection {}", peer);
       peer.setLastActive();
       peersQueue.offer(peer);
       selectionKey.cancel();

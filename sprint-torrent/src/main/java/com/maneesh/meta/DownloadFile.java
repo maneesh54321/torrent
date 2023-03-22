@@ -9,16 +9,19 @@ public class DownloadFile implements Comparable<DownloadFile> {
 
   private final List<String> path;
 
+  private final long length;
+
   private final int pieceStartIndex;
 
   private final long numOfPieces;
 
   private final String md5Sum;
 
-  public DownloadFile(String name, List<String> path, int pieceStartIndex, long numOfPieces,
+  public DownloadFile(String name, List<String> path, long length, int pieceStartIndex, long numOfPieces,
       String md5Sum) {
     this.name = name;
     this.path = path;
+    this.length = length;
     this.pieceStartIndex = pieceStartIndex;
     this.numOfPieces = numOfPieces;
     this.md5Sum = md5Sum;
@@ -49,6 +52,14 @@ public class DownloadFile implements Comparable<DownloadFile> {
 
   public Optional<String> getMd5Sum() {
     return Optional.ofNullable(md5Sum);
+  }
+
+  public long getLength() {
+    return length;
+  }
+
+  public long getNumOfPieces() {
+    return numOfPieces;
   }
 
   @Override

@@ -9,8 +9,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RarestFirstAvailablePieceStore implements AvailablePieceStore {
+
+  private static final Logger log = LoggerFactory.getLogger(RarestFirstAvailablePieceStore.class);
 
   private final PriorityQueue<AvailablePiece> store;
 
@@ -64,6 +68,7 @@ public class RarestFirstAvailablePieceStore implements AvailablePieceStore {
 
   @Override
   public boolean isDownloadCompleted() {
+    log.debug("Completed {}/{} pieces.\r", this.downloadedPieceCount.get(), pieceDownloadStatus.length);
     return this.downloadedPieceCount.get() == pieceDownloadStatus.length;
   }
 }

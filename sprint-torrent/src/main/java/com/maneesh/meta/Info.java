@@ -25,19 +25,21 @@ public class Info {
 
   private final byte[] infoHash;
 
-  private Content content;
+  private final Content content;
 
   private long totalSizeInBytes;
+
+  private int totalPieces;
 
   public Info(Map<String, Object> infoMap) {
     log.info("Info Map: " + infoMap);
     this.infoHash = calculateInfoHash(infoMap);
     this.pieceLength = (Long) infoMap.get("piece length");
-    this.isPrivate = (Long) infoMap.getOrDefault("private", 0);
+    this.isPrivate = Long.valueOf(infoMap.getOrDefault("private", 0) + "");
     this.pieces = ((ByteBuffer) infoMap.get("pieces")).array();
 
     // Create content representation
-    if (null != pieces) {
+    {
       long totalSizeInBytes = 0;
       if (infoMap.containsKey("files")) {
         // multi file mode
@@ -45,7 +47,6 @@ public class Info {
         String rootDirectoryName = new String(((ByteBuffer) infoMap.get("name")).array(),
             StandardCharsets.UTF_8);
         DownloadFile[] downloadFiles = new DownloadFile[files.size()];
-        content = new Content(rootDirectoryName, downloadFiles);
 
         int pieceStartIndex = 0;
         int i = 0;
@@ -57,15 +58,17 @@ public class Info {
           long length = (long) file.get("length");
           totalSizeInBytes += length;
           long numberOfPieces = length / pieceLength;
+          numberOfPieces = length % pieceLength == 0 ? numberOfPieces : (numberOfPieces + 1);
+          totalPieces += numberOfPieces;
           downloadFiles[i++] = new DownloadFile(
               path.get(path.size() - 1),
-              path,
-              pieceStartIndex,
+              path, length, pieceStartIndex,
               numberOfPieces,
               (String) file.getOrDefault("md5Sum", "")
           );
-          pieceStartIndex += length / pieceLength - 1;
+          pieceStartIndex += numberOfPieces;
         }
+        content = new Content(rootDirectoryName, downloadFiles);
       } else {
         // single file mode
         DownloadFile[] downloadFiles = new DownloadFile[1];
@@ -73,8 +76,11 @@ public class Info {
             StandardCharsets.UTF_8);
         String md5Sum = (String) infoMap.get("md5Sum");
         long length = (long) infoMap.get("length");
+        long numberOfPieces = length / pieceLength;
+        numberOfPieces = length % pieceLength == 0 ? numberOfPieces : (numberOfPieces + 1);
+        totalPieces += numberOfPieces;
         totalSizeInBytes += length;
-        downloadFiles[0] =  new DownloadFile(name, null, 0, pieces.length, md5Sum);
+        downloadFiles[0] = new DownloadFile(name, null, length, 0, numberOfPieces, md5Sum);
         content = new Content(null, downloadFiles);
       }
 
@@ -108,7 +114,7 @@ public class Info {
   }
 
   public int getTotalPieces() {
-    return this.pieces.length / 20;
+    return totalPieces;
   }
 
   public Content getContent() {

@@ -9,7 +9,6 @@ import java.net.SocketAddress;
 import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -40,10 +39,10 @@ public class TorrentPeersSwarm implements PeersStore, PeersQueue {
   }
 
   @Override
-  public void refreshPeers(Collection<SocketAddress> newPeerAddresses) {
+  public synchronized void refreshPeers(List<SocketAddress> newPeerAddresses) {
 
-    log.debug("Adding following addresses to swarm:");
-    newPeerAddresses.forEach(address -> log.debug("{}", address));
+    log.info("Adding following addresses to swarm:");
+    newPeerAddresses.forEach(address -> log.info("{}", address));
 
     // remove peers which are not there in new list of peers
     deque.removeIf(peer -> !newPeerAddresses.contains(peer.getSocketAddress()));
@@ -59,16 +58,23 @@ public class TorrentPeersSwarm implements PeersStore, PeersQueue {
   }
 
   @Override
-  public boolean offer(Peer peer) {
-    activePeers.remove(peer);
-    return deque.offer(peer);
+  public synchronized void offer(Peer peer) {
+    if(activePeers.contains(peer)){
+      activePeers.remove(peer);
+      deque.offer(peer);
+    }
   }
 
   @Override
-  public Peer poll() {
+  public synchronized Peer poll() {
     Peer peer = deque.poll();
     activePeers.add(peer);
     return peer;
+  }
+
+  @Override
+  public Peer peek(){
+    return deque.peek();
   }
 
   @Override

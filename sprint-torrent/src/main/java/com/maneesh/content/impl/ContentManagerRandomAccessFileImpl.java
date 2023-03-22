@@ -2,7 +2,7 @@ package com.maneesh.content.impl;
 
 import com.maneesh.content.ContentManager;
 import com.maneesh.content.DownloadedBlock;
-import com.maneesh.content.common.Constants;
+import com.maneesh.common.Constants;
 import com.maneesh.core.Torrent;
 import com.maneesh.meta.Content;
 import com.maneesh.meta.DownloadFile;
@@ -12,6 +12,8 @@ import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,24 +33,32 @@ public class ContentManagerRandomAccessFileImpl implements ContentManager {
 
   private final Torrent torrent;
 
+  private Lock lock;
+
   public ContentManagerRandomAccessFileImpl(Torrent torrent, ExecutorService executorService, Info info) throws IOException {
     this.torrent = torrent;
     this.info = info;
     this.executorService = executorService;
+    this.lock = new ReentrantLock();
     Content content = info.getContent();
 
-    DownloadFile[] downloadFiles = content.downloadFiles();
+    DownloadFile[] downloadFiles = content.getDownloadFiles();
     startIndices = new int[downloadFiles.length];
     this.randomAccessFileList = new RandomAccessFile[downloadFiles.length];
 
-    if (downloadFiles.length > 1) {
-      // multi file mode
-      contentMode = ContentMode.MULTI;
+    if (content.getRootDirectoryName() != null) {
+      if(downloadFiles.length == 1){
+        // single file inside some directory
+        contentMode = ContentMode.SINGLE;
+      } else {
+        // multi file mode
+        contentMode = ContentMode.MULTI;
+      }
       for (int i = 0; i < downloadFiles.length; i++) {
         DownloadFile downloadFile = downloadFiles[i];
         startIndices[i] = downloadFile.getPieceStartIndex();
         Path rootDirectory = Path.of(
-            Constants.DOWNLOAD_ROOT_LOCATION + content.rootDirectoryName());
+            Constants.DOWNLOAD_ROOT_LOCATION + content.getRootDirectoryName());
         if (!Files.exists(rootDirectory)) {
           Files.createDirectory(rootDirectory);
         }
@@ -57,14 +67,14 @@ public class ContentManagerRandomAccessFileImpl implements ContentManager {
         while (j < downloadFile.getPath().size() - 1) {
           path.append("/").append(downloadFile.getPath().get(j));
           Path filePath = Path.of(
-              Constants.DOWNLOAD_ROOT_LOCATION + content.rootDirectoryName() + path);
+              Constants.DOWNLOAD_ROOT_LOCATION + content.getRootDirectoryName() + path);
           if(!Files.exists(filePath)){
             Files.createDirectory(filePath);
           }
           j++;
         }
         randomAccessFileList[i] = new RandomAccessFile(
-            Constants.DOWNLOAD_ROOT_LOCATION + content.rootDirectoryName() + path + "/"
+            Constants.DOWNLOAD_ROOT_LOCATION + content.getRootDirectoryName() + path + "/"
                 + downloadFile.getName(),
             "rw");
       }
@@ -78,20 +88,25 @@ public class ContentManagerRandomAccessFileImpl implements ContentManager {
 
   @Override
   public void writeToDisk(DownloadedBlock downloadedBlock) throws IOException {
-    log.info("Writing to disk: {}", downloadedBlock);
+    try {
+      lock.lock();
+      log.info("Writing to disk: {}", downloadedBlock);
 
-    // search the file to which this block belongs
-    int fileIndex = contentMode == ContentMode.SINGLE ? 0
-        : findFileIndexByPieceIndex(downloadedBlock.pieceIndex());
+      // search the file to which this block belongs
+      int fileIndex = contentMode == ContentMode.SINGLE ? 0
+          : findFileIndexByPieceIndex(downloadedBlock.pieceIndex());
 
-    RandomAccessFile file = randomAccessFileList[fileIndex];
+      RandomAccessFile file = randomAccessFileList[fileIndex];
 
-    long offset = (downloadedBlock.pieceIndex() - startIndices[fileIndex]) * info.getPieceLength()
-        + downloadedBlock.offset();
+      long offset = (downloadedBlock.pieceIndex() - startIndices[fileIndex]) * info.getPieceLength()
+          + downloadedBlock.offset();
 
-    file.seek(offset);
+      file.seek(offset);
 
-    file.write(downloadedBlock.data());
+      file.write(downloadedBlock.data());
+    } finally {
+      lock.unlock();
+    }
   }
 
   @Override

@@ -4,12 +4,26 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ff61bee9-25dd-4308-890d-84bfee837696" name="Changes" comment="Fix download. Fix few bugs.">
+    <list default="true" id="ff61bee9-25dd-4308-890d-84bfee837696" name="Changes" comment="Send keep alive message if peer is inactive for 1 min">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Torrent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/core/Torrent.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/content/common/Constants.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/common/Constants.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/content/impl/ContentManagerRandomAccessFileImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/content/impl/ContentManagerRandomAccessFileImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/meta/Content.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/meta/Content.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/meta/DownloadFile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/meta/DownloadFile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/meta/Info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/meta/Info.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioHandshakeHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioHandshakeHandler.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/PeerNioIOHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/PeerNioIOHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/KeepAliveMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/KeepAliveMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/MessageFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/MessageFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BitfieldMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BitfieldMessage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/PeersQueue.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/PeersQueue.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/PeersStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/PeersStore.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersCollector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersCollector.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersSwarm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersSwarm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/http/TrackerRequestBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/http/TrackerRequestBuilder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/udp/UDPTrackerClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/udp/UDPTrackerClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/PieceDownloadSchedulerImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/PieceDownloadSchedulerImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/RarestFirstAvailablePieceStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/RarestFirstAvailablePieceStore.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -78,6 +92,11 @@
     &quot;full.screen.before.presentation.mode&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/maneesh/Work/torrent/sprint-torrent&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;reference.settings.ide.settings.new.ui&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
+      &quot;TEXT&quot;
+    ]
   }
 }</component>
   <component name="RecentsManager">
@@ -229,7 +248,14 @@
       <option name="project" value="LOCAL" />
       <updated>1679244790382</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="Send keep alive message if peer is inactive for 1 min">
+      <created>1679250777186</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1679250777186</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -255,35 +281,21 @@
     <MESSAGE value="Improve exception handling. Improve client shutdown. Refactoring" />
     <MESSAGE value="handle choking of connections, Return failed connection to PeersQueue to be retried." />
     <MESSAGE value="Fix download. Fix few bugs." />
-    <option name="LAST_COMMIT_MESSAGE" value="Fix download. Fix few bugs." />
+    <MESSAGE value="Send keep alive message if peer is inactive for 1 min" />
+    <option name="LAST_COMMIT_MESSAGE" value="Send keep alive message if peer is inactive for 1 min" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/http/HttpTrackerClient.java</url>
-          <line>18</line>
-          <option name="timeStamp" value="29" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/http/HttpTrackerClient.java</url>
-          <line>29</line>
-          <option name="timeStamp" value="30" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/http/TrackerRequestBuilder.java</url>
-          <line>69</line>
-          <option name="timeStamp" value="32" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/http/TrackerRequestBuilder.java</url>
-          <line>84</line>
-          <option name="timeStamp" value="33" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/network/message/PieceMessage.java</url>
           <line>35</line>
           <option name="timeStamp" value="46" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersCollector.java</url>
+          <line>54</line>
+          <option name="timeStamp" value="77" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

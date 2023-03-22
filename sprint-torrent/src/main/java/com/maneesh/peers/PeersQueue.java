@@ -3,9 +3,11 @@ package com.maneesh.peers;
 import com.maneesh.core.Peer;
 
 public interface PeersQueue {
-  boolean offer(Peer peer);
+  void offer(Peer peer);
 
   Peer poll();
+
+  Peer peek();
 
   boolean isEmpty();
 }

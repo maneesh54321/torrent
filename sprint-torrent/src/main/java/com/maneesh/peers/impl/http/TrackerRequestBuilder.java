@@ -83,7 +83,7 @@ class TrackerRequestBuilder implements InfoHashTrackerRequestBuilder,
   @Override
   public FinalTrackerRequestBuilder compact(int compact) {
     this.compact = compact;
-    return null;
+    return this;
   }
 
   @Override

@@ -1,4 +1,4 @@
-package com.maneesh.content.common;
+package com.maneesh.common;
 
 public interface Constants {
   String PEER_ID = "-SP1000-uartcg486250";

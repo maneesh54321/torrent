@@ -120,7 +120,7 @@ public class UDPTrackerClient implements TrackerClient {
       InetSocketAddress socketAddress) throws Exception {
 
     int n = 0;
-    while (n < 8) {
+    while (n < 2) {
       try {
         udpSocket.setSoTimeout(15000 * (2 ^ n));
 

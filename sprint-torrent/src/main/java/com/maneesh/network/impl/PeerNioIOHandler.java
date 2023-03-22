@@ -50,7 +50,7 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
     this.pieceDownloadScheduler = torrent.getPieceDownloadScheduler();
     selector = Selector.open();
     ioPollingTask = torrent.getScheduledExecutorService()
-        .scheduleAtFixedRate(this::pollConnectionsIO, 50, 50, TimeUnit.MILLISECONDS);
+        .scheduleWithFixedDelay(this::pollConnectionsIO, 50, 50, TimeUnit.MILLISECONDS);
   }
 
   private void pollConnectionsIO() {
@@ -140,9 +140,9 @@ public class PeerNioIOHandler implements PeerIOHandler, LongRunningProcess {
   }
 
   private void cancelPeerConnection(SelectionKey selectionKey) {
-    log.warn("Closing peer connection and returning peer to store for retry...");
     if (null != selectionKey) {
       Peer peer = getPeerIOStateFromKey(selectionKey).getPeer();
+      log.warn("Cancelling peer connection {}", peer);
       peer.setLastActive();
       peersQueue.offer(peer);
       selectionKey.cancel();

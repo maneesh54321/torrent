@@ -6,6 +6,7 @@ import com.maneesh.peers.PeersStore;
 import com.maneesh.peers.TrackerClient;
 import com.maneesh.peers.impl.http.HttpTrackerClient;
 import com.maneesh.peers.impl.udp.UDPTrackerClient;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -44,11 +45,12 @@ public class TorrentPeersCollector implements LongRunningProcess {
   }
 
   private void collectPeers() {
+    Optional<TrackerResponse> maybeTrackerResponse = Optional.empty();
     try {
       // collect peers
-      for (String announceUrl : torrent.getTorrentMetadata().getAnnounceList()) {
-        Optional<TrackerResponse> maybeTrackerResponse = Optional.empty();
-        log.debug("Trying tracker: {}", announceUrl);
+      List<String> announceList = torrent.getTorrentMetadata().getAnnounceList();
+      for (String announceUrl : announceList) {
+        log.info("Trying tracker: {}", announceUrl);
         if (isHttpTracker.test(announceUrl)) {
           maybeTrackerResponse = httpTrackerClient.requestPeers(announceUrl, torrent);
         } else if (isUDPTracker.test(announceUrl)) {

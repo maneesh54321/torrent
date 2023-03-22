@@ -5,17 +5,20 @@ import com.maneesh.content.DownloadedBlock;
 import com.maneesh.core.LongRunningProcess;
 import com.maneesh.core.Peer;
 import com.maneesh.core.Torrent;
+import com.maneesh.meta.DownloadFile;
 import com.maneesh.meta.Info;
 import com.maneesh.network.message.BlockRequestMessage;
 import com.maneesh.network.message.IMessage;
 import com.maneesh.piece.AvailablePiece;
 import com.maneesh.piece.AvailablePieceStore;
 import com.maneesh.piece.PieceDownloadScheduler;
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -39,13 +42,13 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
   private final Torrent torrent;
   private final AtomicBoolean downloading;
   private final AtomicInteger blocksDownloaded;
+  private final ReentrantLock lock;
   private int totalBlocks;
   private AvailablePiece currentlyDownloadingPiece;
 
-  private final ReentrantLock lock;
 
-
-  public PieceDownloadSchedulerImpl(Torrent torrent, ScheduledExecutorService executorService, Info info,
+  public PieceDownloadSchedulerImpl(Torrent torrent, ScheduledExecutorService executorService,
+      Info info,
       ContentManager contentManager, AvailablePieceStore availablePieceStore) {
     this.info = info;
     this.contentManager = contentManager;
@@ -63,22 +66,25 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
     try {
       lock.lock();
       if (!downloading.get()) {
-        if(this.availablePieceStore.isDownloadCompleted()){
-          torrent.shutdown();
-        }
-        this.availablePieceStore.highestPriorityPiece().ifPresent(availablePiece -> {
-          log.debug("Highest priority piece: {}", availablePiece);
+        Optional<AvailablePiece> optionalAvailablePiece = this.availablePieceStore.highestPriorityPiece();
+        if(optionalAvailablePiece.isPresent()){
+          AvailablePiece availablePiece = optionalAvailablePiece.get();
+          log.info("Highest priority piece: {}", availablePiece);
           currentlyDownloadingPiece = availablePiece;
           downloading.set(true);
           blocksDownloaded.set(0);
           pendingBlockRequests.addAll(createBlockRequests(availablePiece));
-        });
+        } else if(this.availablePieceStore.isDownloadCompleted()){
+          log.info("Download is completed now!!, shutting down the torrent client...");
+          torrent.shutdown();
+        }
       }
       if (currentlyDownloadingPiece != null) {
         distributeBlocksToPeers(currentlyDownloadingPiece);
       }
     } catch (Exception e) {
       log.warn("Exception occurred while scheduling piece download!!", e);
+      torrent.shutdown();
     } finally {
       lock.unlock();
     }
@@ -113,12 +119,20 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
    * @return List of Block Request Messages which can be sent to peers.
    */
   private List<IMessage> createBlockRequests(AvailablePiece availablePiece) {
-    // Calculate piece length
-    long totalSize = info.getTotalSizeInBytes();
+    // get download file to which this piece belongs
+    DownloadFile downloadFile = info.getContent()
+        .getDownloadFileByPieceIndex(availablePiece.getPieceIndex());
+    // check if this piece is last piece in download file
+    // if this is not last piece then size of piece = piece length else size pf piece = download file length % piece length
     long pieceLength = info.getPieceLength();
-    int totalPieces = info.getInfoHash().length / 20;
-    long availablePieceLength = (availablePiece.getPieceIndex() == totalPieces - 1) ?
-        pieceLength : totalSize % pieceLength;
+    long availablePieceLength;
+    if (availablePiece.getPieceIndex() < (
+        downloadFile.getPieceStartIndex() + downloadFile.getNumOfPieces() - 1)) {
+      availablePieceLength = pieceLength;
+    } else {
+      availablePieceLength = downloadFile.getLength() % pieceLength;
+    }
+
     // Create Blocks Request messages based on complete piece length and block size
     List<IMessage> blockRequests = new ArrayList<>();
     int offset = 0;
@@ -146,22 +160,27 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
   public void completeBlockDownload(DownloadedBlock downloadedBlock) {
     // Write this piece block to disk and mark the block downloaded
     contentManager.writeToDiskAsync(downloadedBlock);
-    // if complete piece is downloaded, set downloading = false
 
+    // if complete piece is downloaded, set downloading = false
     if (blocksDownloaded.incrementAndGet() == totalBlocks) {
       log.info("Completed downloading all blocks of piece {}", currentlyDownloadingPiece);
-      downloading.set(false);
       availablePieceStore.removeHighestPriorityPiece();
+      downloading.set(false);
     }
   }
 
   @Override
   public void failBlocksDownload(Collection<IMessage> messages, Peer peer) {
-    log.debug("{} Returning {} block requests to PieceDownloadScheduler", peer, messages.size());
-    // remove from available piece store as peer is not connected anymore
-    availablePieceStore.removePeer(peer);
-    // queue the blocks which could not be downloaded because peer disconnected
-    pendingBlockRequests.addAll(messages);
+    try {
+      lock.lock();
+      log.info("{} Returning {} block requests to PieceDownloadScheduler", peer, messages.size());
+      // remove from available piece store as peer is not connected anymore
+      availablePieceStore.removePeer(peer);
+      // queue the blocks which could not be downloaded because peer disconnected
+      pendingBlockRequests.addAll(messages);
+    } finally {
+      lock.unlock();
+    }
   }
 
   @Override
