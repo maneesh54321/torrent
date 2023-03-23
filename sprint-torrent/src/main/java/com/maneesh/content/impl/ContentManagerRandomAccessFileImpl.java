@@ -1,8 +1,8 @@
 package com.maneesh.content.impl;
 
+import com.maneesh.common.Constants;
 import com.maneesh.content.ContentManager;
 import com.maneesh.content.DownloadedBlock;
-import com.maneesh.common.Constants;
 import com.maneesh.core.Torrent;
 import com.maneesh.meta.Content;
 import com.maneesh.meta.DownloadFile;
@@ -12,8 +12,6 @@ import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,13 +31,13 @@ public class ContentManagerRandomAccessFileImpl implements ContentManager {
 
   private final Torrent torrent;
 
-  private Lock lock;
+//  private final Lock lock;
 
   public ContentManagerRandomAccessFileImpl(Torrent torrent, ExecutorService executorService, Info info) throws IOException {
     this.torrent = torrent;
     this.info = info;
     this.executorService = executorService;
-    this.lock = new ReentrantLock();
+//    this.lock = new ReentrantLock();
     Content content = info.getContent();
 
     DownloadFile[] downloadFiles = content.getDownloadFiles();
@@ -87,9 +85,9 @@ public class ContentManagerRandomAccessFileImpl implements ContentManager {
   }
 
   @Override
-  public void writeToDisk(DownloadedBlock downloadedBlock) throws IOException {
-    try {
-      lock.lock();
+  public synchronized void writeToDisk(DownloadedBlock downloadedBlock) throws IOException {
+//    try {
+//      lock.lock();
       log.info("Writing to disk: {}", downloadedBlock);
 
       // search the file to which this block belongs
@@ -104,9 +102,9 @@ public class ContentManagerRandomAccessFileImpl implements ContentManager {
       file.seek(offset);
 
       file.write(downloadedBlock.data());
-    } finally {
-      lock.unlock();
-    }
+//    } finally {
+//      lock.unlock();
+//    }
   }
 
   @Override

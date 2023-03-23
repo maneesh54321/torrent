@@ -4,26 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ff61bee9-25dd-4308-890d-84bfee837696" name="Changes" comment="Send keep alive message if peer is inactive for 1 min">
+    <list default="true" id="ff61bee9-25dd-4308-890d-84bfee837696" name="Changes" comment="Fixed all issues, download working now 😍">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/content/common/Constants.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/common/Constants.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/content/impl/ContentManagerRandomAccessFileImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/content/impl/ContentManagerRandomAccessFileImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/meta/Content.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/meta/Content.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/meta/DownloadFile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/meta/DownloadFile.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/meta/Info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/meta/Info.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioHandshakeHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioHandshakeHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/PeerNioIOHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/PeerNioIOHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BitfieldMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BitfieldMessage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/PeersQueue.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/PeersQueue.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/PeersStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/PeersStore.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersCollector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersCollector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersSwarm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/TorrentPeersSwarm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/http/TrackerRequestBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/http/TrackerRequestBuilder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/udp/UDPTrackerClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/peers/impl/udp/UDPTrackerClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/PieceDownloadSchedulerImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/PieceDownloadSchedulerImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/RarestFirstAvailablePieceStore.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/piece/impl/RarestFirstAvailablePieceStore.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -255,7 +238,14 @@
       <option name="project" value="LOCAL" />
       <updated>1679250777186</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="Fixed all issues, download working now 😍">
+      <created>1679500220631</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1679500220631</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -282,7 +272,8 @@
     <MESSAGE value="handle choking of connections, Return failed connection to PeersQueue to be retried." />
     <MESSAGE value="Fix download. Fix few bugs." />
     <MESSAGE value="Send keep alive message if peer is inactive for 1 min" />
-    <option name="LAST_COMMIT_MESSAGE" value="Send keep alive message if peer is inactive for 1 min" />
+    <MESSAGE value="Fixed all issues, download working now " />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed all issues, download working now " />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
