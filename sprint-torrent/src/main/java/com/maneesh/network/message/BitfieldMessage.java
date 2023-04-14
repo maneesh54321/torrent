@@ -3,7 +3,6 @@ package com.maneesh.network.message;
 import com.maneesh.core.Peer;
 import com.maneesh.core.Torrent;
 import java.nio.ByteBuffer;
-import java.util.BitSet;
 
 public class BitfieldMessage extends NioSocketMessage {
 

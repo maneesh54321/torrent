@@ -13,7 +13,6 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.Random;

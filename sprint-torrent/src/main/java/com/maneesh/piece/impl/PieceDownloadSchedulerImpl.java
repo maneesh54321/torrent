@@ -12,7 +12,6 @@ import com.maneesh.network.message.IMessage;
 import com.maneesh.piece.AvailablePiece;
 import com.maneesh.piece.AvailablePieceStore;
 import com.maneesh.piece.PieceDownloadScheduler;
-import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
