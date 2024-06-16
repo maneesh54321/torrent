@@ -1,2 +1,3 @@
-rootProject.name = 'sprint-torrent'
+rootProject.name = 'torrent'
+include 'sprint-torrent'
 
