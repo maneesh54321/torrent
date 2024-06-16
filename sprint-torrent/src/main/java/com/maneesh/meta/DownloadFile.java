@@ -1,6 +1,7 @@
 package com.maneesh.meta;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public class DownloadFile implements Comparable<DownloadFile> {
@@ -68,5 +69,18 @@ public class DownloadFile implements Comparable<DownloadFile> {
       return 1;
     }
     return Integer.compare(this.pieceStartIndex, o.pieceStartIndex);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    var that = (DownloadFile) o;
+    return pieceStartIndex == that.pieceStartIndex;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(pieceStartIndex);
   }
 }

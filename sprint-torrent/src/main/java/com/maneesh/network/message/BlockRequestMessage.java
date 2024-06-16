@@ -19,7 +19,7 @@ public class BlockRequestMessage extends NioSocketMessage {
 
   @Override
   protected ByteBuffer convertToBytes() {
-    ByteBuffer message = ByteBuffer.allocate(17);
+    var message = ByteBuffer.allocate(17);
     message.putInt(13);
     message.put((byte) 6);
     message.putInt(pieceIndex);
@@ -50,7 +50,7 @@ public class BlockRequestMessage extends NioSocketMessage {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    BlockRequestMessage that = (BlockRequestMessage) o;
+    var that = (BlockRequestMessage) o;
     return pieceIndex == that.pieceIndex && offset == that.offset && length == that.length;
   }
 

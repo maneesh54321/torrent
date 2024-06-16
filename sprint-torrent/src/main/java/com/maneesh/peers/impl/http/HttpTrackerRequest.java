@@ -59,23 +59,23 @@ class HttpTrackerRequest {
 //        .queryParam(NO_PEER_ID, 0)
 //        .build().encode(StandardCharsets.ISO_8859_1);
 
-    String encodedInfoHash = URLEncoder.encode(infoHashBytesString, StandardCharsets.UTF_8);
-    String encodedPeerId = URLEncoder.encode(peerId, StandardCharsets.UTF_8);
-    String encodedPort = URLEncoder.encode(String.valueOf(port), StandardCharsets.UTF_8);
-    String encodedUploaded = URLEncoder.encode(String.valueOf(uploaded), StandardCharsets.UTF_8);
-    String encodedDownloaded = URLEncoder.encode(String.valueOf(downloaded),
+    var encodedInfoHash = URLEncoder.encode(infoHashBytesString, StandardCharsets.UTF_8);
+    var encodedPeerId = URLEncoder.encode(peerId, StandardCharsets.UTF_8);
+    var encodedPort = URLEncoder.encode(String.valueOf(port), StandardCharsets.UTF_8);
+    var encodedUploaded = URLEncoder.encode(String.valueOf(uploaded), StandardCharsets.UTF_8);
+    var encodedDownloaded = URLEncoder.encode(String.valueOf(downloaded),
         StandardCharsets.UTF_8);
-    String encodedLeft = URLEncoder.encode(String.valueOf(left), StandardCharsets.UTF_8);
-    String encodedCompact = URLEncoder.encode(String.valueOf(compact), StandardCharsets.UTF_8);
-    String encodedEvent = URLEncoder.encode("started", StandardCharsets.UTF_8);
-    String encodedNoPeerId = URLEncoder.encode(String.valueOf(noPeerId), StandardCharsets.UTF_8);
+    var encodedLeft = URLEncoder.encode(String.valueOf(left), StandardCharsets.UTF_8);
+    var encodedCompact = URLEncoder.encode(String.valueOf(compact), StandardCharsets.UTF_8);
+    var encodedEvent = URLEncoder.encode("started", StandardCharsets.UTF_8);
+    var encodedNoPeerId = URLEncoder.encode(String.valueOf(noPeerId), StandardCharsets.UTF_8);
 
-    String httpUrl = String.format(
+    var httpUrl = String.format(
         "%s?info_hash=%s&peer_id=%s&port=%s&uploaded=%s&downloaded=%s&left=%s&compact=%s&event=%s&no_peer_id=%s",
         announceUrl, encodedInfoHash, encodedPeerId, encodedPort, encodedUploaded,
         encodedDownloaded, encodedLeft, encodedCompact,
         encodedEvent, encodedNoPeerId);
 
-    return new URL(httpUrl);
+    return URI.create(httpUrl).toURL();
   }
 }

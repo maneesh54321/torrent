@@ -39,7 +39,7 @@ public class RarestFirstAvailablePieceStore implements AvailablePieceStore {
       if (availablePieces.containsKey(pieceIndex)) {
         availablePieces.get(pieceIndex).addPeer(peer);
       } else {
-        AvailablePiece availablePiece = new AvailablePiece(pieceIndex, peer);
+        var availablePiece = new AvailablePiece(pieceIndex, peer);
         availablePieces.put(pieceIndex, availablePiece);
         store.add(availablePiece);
       }

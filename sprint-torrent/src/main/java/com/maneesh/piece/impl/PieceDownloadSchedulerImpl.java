@@ -5,29 +5,22 @@ import com.maneesh.content.DownloadedBlock;
 import com.maneesh.core.LongRunningProcess;
 import com.maneesh.core.Peer;
 import com.maneesh.core.Torrent;
-import com.maneesh.meta.DownloadFile;
 import com.maneesh.meta.Info;
 import com.maneesh.network.message.BlockRequestMessage;
 import com.maneesh.network.message.IMessage;
 import com.maneesh.piece.AvailablePiece;
 import com.maneesh.piece.AvailablePieceStore;
 import com.maneesh.piece.PieceDownloadScheduler;
-import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Queue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongRunningProcess {
 
@@ -66,9 +59,9 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
     try {
       lock.lock();
       if (!downloading.get()) {
-        Optional<AvailablePiece> optionalAvailablePiece = this.availablePieceStore.highestPriorityPiece();
+        var optionalAvailablePiece = this.availablePieceStore.highestPriorityPiece();
         if(optionalAvailablePiece.isPresent()){
-          AvailablePiece availablePiece = optionalAvailablePiece.get();
+          var availablePiece = optionalAvailablePiece.get();
           log.info("Highest priority piece: {}", availablePiece);
           currentlyDownloadingPiece = availablePiece;
           downloading.set(true);
@@ -93,12 +86,12 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
   private void distributeBlocksToPeers(AvailablePiece availablePiece) {
     // assign blocks to peers if pendingBlockRequests queue is not empty
     if (!pendingBlockRequests.isEmpty()) {
-      Iterator<Peer> peerIterator = availablePiece.getPeers().iterator();
+      var peerIterator = availablePiece.getPeers().iterator();
       log.debug("Distributing block requests to peers for piece: {}", availablePiece);
       while (!pendingBlockRequests.isEmpty() && peerIterator.hasNext()) {
-        Peer peer = peerIterator.next();
+        var peer = peerIterator.next();
         if (peer.canDownload()) {
-          IMessage blockRequest = pendingBlockRequests.poll();
+          var blockRequest = pendingBlockRequests.poll();
           peer.addMessage(blockRequest);
           log.info("Block request {} assigned to {}", blockRequest, peer);
         }
@@ -120,11 +113,11 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
    */
   private List<IMessage> createBlockRequests(AvailablePiece availablePiece) {
     // get download file to which this piece belongs
-    DownloadFile downloadFile = info.getContent()
+    var downloadFile = info.getContent()
         .getDownloadFileByPieceIndex(availablePiece.getPieceIndex());
     // check if this piece is last piece in download file
     // if this is not last piece then size of piece = piece length else size pf piece = download file length % piece length
-    long pieceLength = info.getPieceLength();
+    var pieceLength = info.getPieceLength();
     long availablePieceLength;
     if (availablePiece.getPieceIndex() < (
         downloadFile.getPieceStartIndex() + downloadFile.getNumOfPieces() - 1)) {
@@ -135,7 +128,7 @@ public class PieceDownloadSchedulerImpl implements PieceDownloadScheduler, LongR
 
     // Create Blocks Request messages based on complete piece length and block size
     List<IMessage> blockRequests = new ArrayList<>();
-    int offset = 0;
+    var offset = 0;
     while (availablePieceLength >= DEFAULT_BLOCK_SIZE) {
       blockRequests.add(
           new BlockRequestMessage(availablePiece.getPieceIndex(), offset, DEFAULT_BLOCK_SIZE)

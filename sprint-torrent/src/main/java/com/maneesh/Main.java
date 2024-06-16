@@ -22,7 +22,10 @@ public class Main {
 //      torrent = new Torrent("/Users/maneesh/Work/torrent/sprint-torrent/src/main/resources/101 Most Popular Excel Formulas.torrent");
     } catch (Exception e) {
       log.info("Error occurred while creating torrent client", e);
-      torrent.shutdown();
+    } finally {
+      if (torrent != null) {
+        torrent.shutdown();
+      }
     }
   }
 }

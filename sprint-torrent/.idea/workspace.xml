@@ -5,8 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ff61bee9-25dd-4308-890d-84bfee837696" name="Changes" comment="setup sonar">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/.name" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/impl/NioConnectionHandler.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BitfieldMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BitfieldMessage.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BlockRequestMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/maneesh/network/message/BlockRequestMessage.java" afterDir="false" />

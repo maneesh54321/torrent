@@ -20,7 +20,6 @@ public class AvailablePiece {
   }
 
   public void removePeer(Peer peer){
-    assert peer!= null;
     peers.remove(peer);
   }
 

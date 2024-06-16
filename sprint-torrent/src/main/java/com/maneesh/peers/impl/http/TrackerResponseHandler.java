@@ -36,23 +36,23 @@ class TrackerResponseHandler {
     try {
       Map<String, Object> map = bencode.decode(bytes, Type.DICTIONARY);
 
-      System.out.println("Tracker response: " + map);
+      log.info("Tracker response: {}", map);
 
-      ByteBuffer byteBuffer = (ByteBuffer) map.get("peers");
-      TrackerResponse trackerResponse = new TrackerResponse();
+      var byteBuffer = (ByteBuffer) map.get("peers");
+      var trackerResponse = new TrackerResponse();
       trackerResponse.setInterval((Long) map.get("interval"));
       trackerResponse.setLechers((Long) map.get("incomplete"));
       trackerResponse.setSeeders((Long) map.get("complete"));
 
       while (byteBuffer.hasRemaining()) {
-        StringBuilder ip = new StringBuilder();
-        for (int i = 0; i < 4; i++) {
+        var ip = new StringBuilder();
+        for (var i = 0; i < 4; i++) {
           ip.append(byteBuffer.get() & 0xff);
           ip.append(".");
         }
         ip.deleteCharAt(ip.length() - 1);
-        int port = 0;
-        for (int i = 0; i < 2; i++) {
+        var port = 0;
+        for (var i = 0; i < 2; i++) {
           port = (port << 8) + (byteBuffer.get() & 0xFF);
         }
         trackerResponse.addPeer(ip.toString(), port);

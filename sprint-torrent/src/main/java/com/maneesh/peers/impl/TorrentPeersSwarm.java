@@ -49,7 +49,7 @@ public class TorrentPeersSwarm implements PeersStore, PeersQueue {
 
     // Add the peer to queue if it is not there in queue and active peers
     for (SocketAddress socketAddress : newPeerAddresses) {
-      Peer peer = new Peer(socketAddress, messageFactory, pieceDownloadScheduler, clock);
+      var peer = new Peer(socketAddress, messageFactory, pieceDownloadScheduler, clock);
       if (!deque.contains(peer) && !activePeers.contains(peer)) {
         peer.setLastActive(clock.instant().minus(5, ChronoUnit.MINUTES));
         deque.add(peer);
@@ -67,7 +67,7 @@ public class TorrentPeersSwarm implements PeersStore, PeersQueue {
 
   @Override
   public synchronized Peer poll() {
-    Peer peer = deque.poll();
+    var peer = deque.poll();
     activePeers.add(peer);
     return peer;
   }

@@ -7,20 +7,16 @@ import com.maneesh.network.ConnectionHandler;
 import com.maneesh.network.PeerIOHandler;
 import com.maneesh.network.state.PeerConnectionState;
 import com.maneesh.peers.PeersQueue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class NioConnectionHandler implements ConnectionHandler, LongRunningProcess {
 
@@ -69,12 +65,12 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
 
   private void updateReadyConnections() throws IOException {
     connected.selectNow();
-    Iterator<SelectionKey> keys = connected.selectedKeys().iterator();
+    var keys = connected.selectedKeys().iterator();
     while (keys.hasNext()) {
-      SelectionKey selectionKey = keys.next();
+      var selectionKey = keys.next();
       keys.remove();
-      PeerConnectionState peerConnectionState = getPeerConnectionStateFromKey(selectionKey);
-      SocketChannel socket = (SocketChannel) selectionKey.channel();
+      var peerConnectionState = getPeerConnectionStateFromKey(selectionKey);
+      var socket = (SocketChannel) selectionKey.channel();
       try {
         if (socket.finishConnect()) {
           onConnectionEstablished(socket, peerConnectionState.getPeer());
@@ -88,16 +84,16 @@ public class NioConnectionHandler implements ConnectionHandler, LongRunningProce
   }
 
   private void enqueueNewConnections() {
-    PeerIOHandler peerIOHandler = torrent.getPeerIOHandler();
+    var peerIOHandler = torrent.getPeerIOHandler();
     while (requireMoreConnections(peerIOHandler) && !peersQueue.isEmpty()) {
       log.info(
           "total active connections : {}, connections in progress: {}. Enqueuing more peers..",
           peerIOHandler.getTotalActiveConnections(), connected.keys().size());
       if (haveOldFailedPeers()) {
-        Peer peer = peersQueue.poll();
-        PeerConnectionState peerConnectionState = new PeerConnectionState(peer);
+        var peer = peersQueue.poll();
+        var peerConnectionState = new PeerConnectionState(peer);
         try {
-          SocketChannel socketChannel = SocketChannel.open();
+          var socketChannel = SocketChannel.open();
           socketChannel.configureBlocking(false);
           try {
             socketChannel.register(connected, SelectionKey.OP_CONNECT, peerConnectionState);

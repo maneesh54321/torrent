@@ -7,7 +7,7 @@ public class InterestedMessage extends NioSocketMessage {
 
   private final Peer peer;
 
-  private final static ByteBuffer interestedMsgBytes = ByteBuffer.allocate(5);
+  private static final ByteBuffer interestedMsgBytes = ByteBuffer.allocate(5);
 
   static {
     interestedMsgBytes.putInt(1);

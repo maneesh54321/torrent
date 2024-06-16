@@ -6,14 +6,14 @@ import com.maneesh.peers.PeersStore;
 import com.maneesh.peers.TrackerClient;
 import com.maneesh.peers.impl.http.HttpTrackerClient;
 import com.maneesh.peers.impl.udp.UDPTrackerClient;
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TorrentPeersCollector implements LongRunningProcess {
 
@@ -48,8 +48,8 @@ public class TorrentPeersCollector implements LongRunningProcess {
     Optional<TrackerResponse> maybeTrackerResponse = Optional.empty();
     try {
       // collect peers
-      List<String> announceList = torrent.getTorrentMetadata().getAnnounceList();
-      for (String announceUrl : announceList) {
+      var announceList = torrent.getTorrentMetadata().getAnnounceList();
+      for (var announceUrl : announceList) {
         log.info("Trying tracker: {}", announceUrl);
         if (isHttpTracker.test(announceUrl)) {
           maybeTrackerResponse = httpTrackerClient.requestPeers(announceUrl, torrent);
@@ -57,7 +57,7 @@ public class TorrentPeersCollector implements LongRunningProcess {
           maybeTrackerResponse = udpTrackerClient.requestPeers(announceUrl, torrent);
         }
         if (maybeTrackerResponse.isPresent()) {
-          TrackerResponse trackerResponse = maybeTrackerResponse.get();
+          var trackerResponse = maybeTrackerResponse.get();
           trackerResponse.getPeersAddresses().ifPresent(this.peersStore::refreshPeers);
 
           // schedule the next peer collection

@@ -16,7 +16,7 @@ public class HttpTrackerClient implements TrackerClient {
   @Override
   public Optional<TrackerResponse> requestPeers(String url, Torrent torrent) {
     try {
-      HttpTrackerRequest trackerRequest = TrackerRequestBuilder.aTrackerRequest()
+      var trackerRequest = TrackerRequestBuilder.aTrackerRequest()
           .withInfoHash(torrent.getTorrentMetadata().getInfo().getInfoHash())
           .withPeerId(torrent.getPeerId())
           .withPort(torrent.getPort())
@@ -27,7 +27,7 @@ public class HttpTrackerClient implements TrackerClient {
           .noPeerId(0)
           .build();
 
-      HttpURLConnection connection = (HttpURLConnection) trackerRequest.getUrlEncodedUrl(url)
+      var connection = (HttpURLConnection) trackerRequest.getUrlEncodedUrl(url)
           .openConnection();
       connection.setRequestMethod("GET");
       connection.setRequestProperty("Connection", "close");
@@ -35,9 +35,9 @@ public class HttpTrackerClient implements TrackerClient {
 
       var dataIs = connection.getInputStream();
 
-      byte[] bytes = dataIs.readAllBytes();
+      var bytes = dataIs.readAllBytes();
 
-      TrackerResponseHandler trackerResponseHandler = TrackerResponseHandler
+      var trackerResponseHandler = TrackerResponseHandler
           .getInstance(Torrent.BENCODE);
 
       return trackerResponseHandler.extractTrackerResponse(bytes);

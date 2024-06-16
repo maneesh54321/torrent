@@ -3,7 +3,7 @@ package com.maneesh.network.message;
 import com.maneesh.core.Peer;
 import com.maneesh.core.Torrent;
 import java.nio.ByteBuffer;
-import java.util.BitSet;
+import java.util.Arrays;
 
 public class BitfieldMessage extends NioSocketMessage {
 
@@ -39,7 +39,7 @@ public class BitfieldMessage extends NioSocketMessage {
 
     for (int i = 0; i < bitfieldBytes.length; i++) {
       for (int j = 0; j < 8; j++) {
-        int bitIndex = i * 8 + j;
+        var bitIndex = i * 8 + j;
         bitfield[bitIndex] = ((bitfieldBytes[i] >> (7 - j)) & 1) == 1;
       }
     }
@@ -50,7 +50,7 @@ public class BitfieldMessage extends NioSocketMessage {
   @Override
   public String toString() {
     return "BitfieldMessage{" +
-        "bitfield=" + bitfield +
+        "bitfield=" + Arrays.toString(bitfield) +
         '}';
   }
 }
